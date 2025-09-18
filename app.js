@@ -119,7 +119,7 @@ async function updateUI() {
     
     let networkName;
     try {
-        const networkName = await get_current_network();
+        networkName = await get_current_network();
         console.log("Network Name:", networkName);
     } catch (error) {
         console.error("Error fetching network name:", error);
