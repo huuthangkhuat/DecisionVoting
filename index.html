@@ -65,6 +65,14 @@
                 <ul id="results-list"></ul>
             </div>
         </section>
+        <section id="admin-voter-controls" style="display:none;">
+            <h3>Voter Management (Admin Only)</h3>
+            <p><strong>Current Excluded Voters:</strong></p>
+            <ul id="excludedVotersList"></ul>
+            <input type="text" id="voterAddressInput" placeholder="Enter voter address" size="40">
+            <button id="excludeVoterBtn" onclick="handleExcludeVoter()">Exclude Voter</button>
+            <button id="reinstateVoterBtn" onclick="handleReinstateVoter()">Reinstate Voter</button>
+        </section>
     </main>
 </body>
 </html>

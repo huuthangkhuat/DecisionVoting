@@ -133,6 +133,18 @@ async function loadContractData(phase) {
 
     if (userRole === 'Coordinator') {
         document.getElementById('sessionIdDisplay').textContent = sessionId;
+        const excludedVoters = await votingContract.methods.getExcludedVoters().call();
+        const excludedListElement = document.getElementById('excludedVotersList');
+        excludedListElement.innerHTML = '';
+        if (excludedVoters.length > 0) {
+            excludedVoters.forEach(voter => {
+                const li = document.createElement('li');
+                li.textContent = voter;
+                excludedListElement.appendChild(li);
+            });
+        } else {
+            excludedListElement.textContent = "No voters are currently excluded.";
+        }
     } else {
         document.getElementById('participantSessionIdDisplay').textContent = sessionId;
     }
