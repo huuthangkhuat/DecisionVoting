@@ -2,6 +2,7 @@
 
 // Admin functions logic
 async function handleStartSession() {
+    console.log("Starting new voting session...");
     const topic = document.getElementById('topicInput').value;
     const optionsString = document.getElementById('optionsInput').value;
     const optionsArray = optionsString.split(',').map(s => s.trim());
@@ -22,6 +23,7 @@ async function handleStartSession() {
 }
 
 async function handleEndVoting() {
+    console.log("Ending voting...");
     try {
         await votingContract.methods.endVoting().send({ from: userAccount });
         alert("Voting has ended.");
@@ -33,6 +35,7 @@ async function handleEndVoting() {
 }
 
 async function handleStartNewSession() {
+    console.log("Starting new session setup...");
     try {
         await votingContract.methods.startSetup().send({ from: userAccount });
         alert("New session is ready for setup.");
@@ -44,6 +47,7 @@ async function handleStartNewSession() {
 }
 
 async function handleExcludeVoter() {
+    console.log("Excluding voter...");
     const voterAddress = document.getElementById('voterAddressInput').value;
     if (!web3.utils.isAddress(voterAddress)) {
         alert("Please enter a valid Ethereum address.");
@@ -60,6 +64,7 @@ async function handleExcludeVoter() {
 }
 
 async function handleReinstateVoter() {
+    console.log("Reinstating voter...");
     const voterAddress = document.getElementById('voterAddressInput').value;
     if (!web3.utils.isAddress(voterAddress)) {
         alert("Please enter a valid Ethereum address.");
@@ -77,6 +82,7 @@ async function handleReinstateVoter() {
 
 // Participant functions logic
 async function handleSubmitVote() {
+    console.log("Submitting vote...");
     const selectedOption = document.querySelector('input[name="voteOption"]:checked');
     if (!selectedOption) {
         alert("Please select an option to vote.");

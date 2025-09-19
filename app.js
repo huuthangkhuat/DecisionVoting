@@ -135,6 +135,7 @@ async function loadContractData(phase) {
     const sessionId = await votingContract.methods.currentSessionId().call();
 
     if (userRole === 'Coordinator') {
+        console.log("Loading admin data for session:", sessionId);
         document.getElementById('sessionIdDisplay').textContent = sessionId;
         let excludedVoters;
         try {
