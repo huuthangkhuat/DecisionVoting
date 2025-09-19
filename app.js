@@ -34,9 +34,6 @@ async function connectWallet() {
 // Update UI with user info and contract status
 async function updateUI() {
 
-    console.log("Entering updateUI(). userAccount:", userAccount);
-    console.log("Is votingContract defined? ", !!votingContract);
-
     if (!userAccount) {
         userAddressSpan.textContent = "Not connected";
         userRoleSpan.textContent = "N/A";
@@ -108,10 +105,12 @@ function displaySectionsByPhase(phase) {
     document.getElementById('reveal-phase').style.display = 'none';
     document.getElementById('admin-voter-controls').style.display = 'none';
 
+    console.log(`Displaying sections for role: ${userRole}, phase: ${phase}`);
     if (userRole === "Coordinator") {
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('admin-voter-controls').style.display = 'block';
         if (phase === 'Setup') {
+            console.log("In Setup phase, showing setup controls.");
             document.getElementById('setup-phase').style.display = 'block';
         } else if (phase === 'Voting') {
             document.getElementById('voting-phase').style.display = 'block';
@@ -137,13 +136,13 @@ async function loadContractData(phase) {
         let excludedVoters;
         try {
             excludedVoters = await votingContract.methods.getExcludedVoters().call();
+            console.log("Excluded voters:", excludedVoters);
         } catch (error) {
             console.error("Error fetching excluded voters:", error);
             return;
         }
         const excludedListElement = document.getElementById('excludedVotersList');
         excludedListElement.innerHTML = '';
-        console.log("Excluded voters:", excludedVoters);
         if (excludedVoters.length > 0) {
             excludedVoters.forEach(voter => {
                 const li = document.createElement('li');
