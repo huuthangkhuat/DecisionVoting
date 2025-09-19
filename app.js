@@ -11,75 +11,10 @@ let userAccount;
 let userRole; // "Coordinator" or "Participant"
 
 // DOM elements
-const connectWalletBtn = document.getElementById('connectWalletBtn');
 const userAddressSpan = document.getElementById('userAddress');
 const userRoleSpan = document.getElementById('userRole');
 const networkNameSpan = document.getElementById('networkName');
 const currentStatusSpan = document.getElementById('currentStatus');
-
-//Helper function to obtain current eth address
-async function get_current_eth_address(){
-    if (typeof window.ethereum !== 'undefined') {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-        console.log(accounts);
-        return accounts[0]
-    }
-    else{
-        console.error("Metamask is not installed!");
-        return null;
-    }
-}
-
-//Helper function to obtain user balance
-async function get_user_balance(eth_address){
-    if (typeof window.ethereum !== 'undefined') {
-        const balance = await window.ethereum.request({
-            method: "eth_getBalance",
-            params: [eth_address],
-        })
-        console.log(balance);
-        return (parseInt(balance, 16) / Math.pow(10,18)).toFixed(10);
-    }
-    else{
-        console.error("Metamask is not installed!");
-        return null;
-    }
-}
-
-//Helper function to obtain current eth network
-async function get_current_network(){
-    // get current eth network
-    const eth_network = await window.ethereum.request({
-        method: 'eth_chainId',
-        params: []
-    });
-    var current_network = parseInt(eth_network, 16);
-    // console.log(typeof(current_network));
-    var result;
-    switch (current_network) {
-                    case 1:
-                    result = "Mainnet";
-                    break
-                    case 5:
-                    result = "Goerli";
-                    break
-                    case 11155111:
-                    result =  "Sepolia";
-                    break
-                    case 2018:
-                    result =  "Dev";
-                    break
-                    case 63:
-                    result =  "Mordor";
-                    break
-                    case 61:
-                    result =  "Classic";
-                    break
-                    default:
-                    result =  "unknow";
-            }
-    return result;
-}
 
 // Connect to MetaMask
 async function connectWallet() {
@@ -265,22 +200,6 @@ async function loadContractData(phase) {
             document.getElementById('winner').textContent = `It's a tie between: ${winners.join(" and ")}`;
         }
     }
-}
-
-// Add event listener to the connect button
-connectWalletBtn.addEventListener('click', connectWallet);  
-
-// Listen for account changes from MetaMask
-if (window.ethereum) {
-    window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-            userAccount = accounts[0];
-            updateUI();
-        } else {
-            userAccount = null;
-            updateUI();
-        }
-    });
 }
 
 // Initial call to check for existing connection
