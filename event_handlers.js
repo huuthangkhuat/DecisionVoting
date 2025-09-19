@@ -99,3 +99,24 @@ async function handleSubmitVote() {
         alert("Transaction failed. Check console for details.");
     }
 }
+
+// Load and display excluded voters list
+async function handleLoadExcludedVoters() {
+    try {
+        const excludedVoters = await votingContract.methods.getExcludedVoters().call();
+        const excludedListElement = document.getElementById('excludedVotersList');
+        excludedListElement.innerHTML = '';
+        if (excludedVoters.length > 0) {
+            excludedVoters.forEach(voter => {
+                const li = document.createElement('li');
+                li.textContent = voter;
+                excludedListElement.appendChild(li);
+            });
+        } else {
+            excludedListElement.textContent = "No voters are currently excluded.";
+        }
+    } catch (error) {
+        console.error("Error loading excluded voters list:", error);
+        alert("Failed to load excluded voters. Are you the coordinator?");
+    }
+}

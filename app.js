@@ -136,26 +136,7 @@ async function loadContractData(phase) {
     const sessionId = await votingContract.methods.currentSessionId().call();
 
     if (userRole === 'Coordinator') {
-        console.log("Loading admin data for session:", sessionId);
         document.getElementById('sessionIdDisplay').textContent = sessionId;
-        let excludedVoters;
-        try {
-            excludedVoters = await votingContract.methods.getExcludedVoters().call();
-        } catch (error) {
-            console.error("Error fetching excluded voters:", error);
-            return;
-        }
-        const excludedListElement = document.getElementById('excludedVotersList');
-        excludedListElement.innerHTML = '';
-        if (excludedVoters.length > 0) {
-            excludedVoters.forEach(voter => {
-                const li = document.createElement('li');
-                li.textContent = voter;
-                excludedListElement.appendChild(li);
-            });
-        } else {
-            excludedListElement.textContent = "No voters are currently excluded.";
-        }
     } else {
         document.getElementById('participantSessionIdDisplay').textContent = sessionId;
     }
