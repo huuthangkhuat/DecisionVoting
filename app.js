@@ -187,7 +187,7 @@ async function loadContractData(phase) {
         const results = await votingContract.methods.getResults().call();
         const options = await votingContract.methods.getOptions().call();
         
-        document.getElementById('results-topic').textContent = topic;
+        document.getElementById('adminRevealTopic').textContent = topic;
         console.log("Voting results:", results);
         console.log("Voting options:", options);
         // Display results
