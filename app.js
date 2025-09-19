@@ -188,7 +188,8 @@ async function loadContractData(phase) {
         const options = await votingContract.methods.getOptions().call();
         
         document.getElementById('results-topic').textContent = topic;
-
+        console.log("Voting results:", results);
+        console.log("Voting options:", options);
         // Display results
         const resultsList = document.getElementById('results-list');
         resultsList.innerHTML = '';
