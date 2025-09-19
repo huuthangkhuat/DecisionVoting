@@ -97,6 +97,7 @@ async function updateUI() {
     currentStatusSpan.textContent = phase;
 
     // Trigger display logic based on role and phase
+    loadContractData(phase);
     displaySectionsByPhase(phase);
 }
 
