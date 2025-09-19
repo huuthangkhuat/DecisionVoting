@@ -150,10 +150,8 @@ async function loadContractData(phase) {
     } else {
         document.getElementById('participantSessionIdDisplay').textContent = sessionId;
     }
-    
-    if (phase === 'Setup') {
-        // This is where the admin inputs new data, so no data needs to be loaded.
-    } else if (phase === 'Voting') {
+            
+    if (phase === 'Voting') {
         const topic = await votingContract.methods.getTopic().call();
         const options = await votingContract.methods.getOptions().call();
         
