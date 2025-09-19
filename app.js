@@ -1,10 +1,8 @@
 // app.js
 
 // Contract details 
-const contractAddress = '0xd00d798b53c0Ef8b0A76B7a0FaF8110cf9D3A64C';
-const contractABI = [
-    {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"}],"name":"ResultsRevealed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":false,"internalType":"string","name":"_topic","type":"string"},{"indexed":false,"internalType":"string[]","name":"_options","type":"string[]"}],"name":"SessionStarted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"_voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"_optionIndex","type":"uint256"}],"name":"VoteCasted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"voter","type":"address"}],"name":"VoterExcluded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"voter","type":"address"}],"name":"VoterReinstated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"}],"name":"VotingEnded","type":"event"},{"inputs":[{"internalType":"uint256","name":"_optionIndex","type":"uint256"}],"name":"castVote","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"coordinator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"currentSessionId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"endVoting","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"excludeVoter","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getExcludedVoters","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOptions","outputs":[{"internalType":"string[]","name":"","type":"string[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getPhase","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getResults","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTopic","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"hasUserVoted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"hasUserVoted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"isVoterExcluded","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"reinstateVoter","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_topic","type":"string"},{"internalType":"string[]","name":"_options","type":"string[]"}],"name":"startSession","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"viewMyVote","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}
-];
+const contractAddress = '0x2e25eCb93fcd673d48D0dF6abfc93bB84035485a';
+const contractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"}],"name":"ResultsRevealed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":false,"internalType":"string","name":"_topic","type":"string"},{"indexed":false,"internalType":"string[]","name":"_options","type":"string[]"}],"name":"SessionStarted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"_voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"_optionIndex","type":"uint256"}],"name":"VoteCasted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"voter","type":"address"}],"name":"VoterExcluded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"voter","type":"address"}],"name":"VoterReinstated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"}],"name":"VotingEnded","type":"event"},{"inputs":[{"internalType":"uint256","name":"_optionIndex","type":"uint256"}],"name":"castVote","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"coordinator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"currentSessionId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"endVoting","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"excludeVoter","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getExcludedVoters","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOptions","outputs":[{"internalType":"string[]","name":"","type":"string[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getPhase","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getResults","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTopic","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"hasUserVoted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"hasUserVoted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"isVoterExcluded","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"reinstateVoter","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_topic","type":"string"},{"internalType":"string[]","name":"_options","type":"string[]"}],"name":"startSession","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"startSetup","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"viewMyVote","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
 
 // Global variables for Web3 and contract instances
 let web3;
@@ -195,8 +193,95 @@ function displaySectionsByPhase(phase) {
     }
 }
 
+async function loadContractData(phase) {
+    const sessionId = await votingContract.methods.currentSessionId().call();
+
+    if (userRole === 'Coordinator') {
+        document.getElementById('sessionIdDisplay').textContent = sessionId;
+    } else {
+        document.getElementById('participantSessionIdDisplay').textContent = sessionId;
+    }
+    
+    if (phase === 'Setup') {
+        // This is where the admin inputs new data, so no data needs to be loaded.
+    } else if (phase === 'Voting') {
+        const topic = await votingContract.methods.getTopic().call();
+        const options = await votingContract.methods.getOptions().call();
+        
+        document.getElementById('adminVotingTopic').textContent = topic;
+        document.getElementById('participantVotingTopic').textContent = topic;
+
+        // Populate options list for participants
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+        options.forEach((option, index) => {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="radio" name="voteOption" value="${index}"> ${option}`;
+            optionsContainer.appendChild(label);
+        });
+        
+        // Check if participant has voted and update UI
+        const hasVoted = await votingContract.methods.hasUserVoted().call({ from: userAccount });
+        if (hasVoted) {
+            document.getElementById('participantVotingStatus').textContent = "You have already voted.";
+            document.getElementById('submitVoteBtn').disabled = true;
+        } else {
+            document.getElementById('participantVotingStatus').textContent = "Please cast your vote.";
+            document.getElementById('submitVoteBtn').disabled = false;
+        }
+
+    } else if (phase === 'Reveal') {
+        const topic = await votingContract.methods.getTopic().call();
+        const results = await votingContract.methods.getResults().call();
+        const options = await votingContract.methods.getOptions().call();
+        
+        document.getElementById('results-topic').textContent = topic;
+
+        // Display results
+        const resultsList = document.getElementById('results-list');
+        resultsList.innerHTML = '';
+        
+        let maxVotes = 0;
+        let winners = [];
+        
+        options.forEach((option, index) => {
+            const voteCount = results[index];
+            if (voteCount > maxVotes) {
+                maxVotes = voteCount;
+                winners = [option];
+            } else if (voteCount === maxVotes) {
+                winners.push(option);
+            }
+            const li = document.createElement('li');
+            li.textContent = `${option}: ${voteCount} votes`;
+            resultsList.appendChild(li);
+        });
+        
+        if (maxVotes === 0) {
+            document.getElementById('winner').textContent = "No winner, no votes were cast.";
+        } else if (winners.length === 1) {
+            document.getElementById('winner').textContent = `The winner is: ${winners[0]}`;
+        } else {
+            document.getElementById('winner').textContent = `It's a tie between: ${winners.join(" and ")}`;
+        }
+    }
+}
+
 // Add event listener to the connect button
-connectWalletBtn.addEventListener('click', connectWallet);
+connectWalletBtn.addEventListener('click', connectWallet);  
+
+// Listen for account changes from MetaMask
+if (window.ethereum) {
+    window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+            userAccount = accounts[0];
+            updateUI();
+        } else {
+            userAccount = null;
+            updateUI();
+        }
+    });
+}
 
 // Initial call to check for existing connection
 window.addEventListener('load', () => {

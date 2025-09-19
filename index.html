@@ -6,14 +6,14 @@
     <title>Decision Voting Platform</title>
     <script src="web3.min.js"></script>
     <script src="app.js" defer></script>
-</head>
+    <script src="event_handlers.js" defer></script> </head>
 <body>
     <header>
         <h1>Decision Voting Platform</h1>
     </header>
     <main>
         <section id="status-section">
-            <button id="connectWalletBtn">Connect Wallet</button>
+            <button id="connectWalletBtn" onclick="connectWallet()">Connect Wallet</button>
             <p id="userStatus">Disconnected</p>
             <p><strong>Wallet Address:</strong> <span id="userAddress"></span></p>
             <p><strong>Network:</strong> <span id="networkName"></span></p>
@@ -32,19 +32,19 @@
                     <h4>Setup Phase</h4>
                     <input type="text" id="topicInput" placeholder="Enter voting topic">
                     <input type="text" id="optionsInput" placeholder="Enter options, comma-separated">
-                    <button id="startSessionBtn">Start Session</button>
+                    <button id="startSessionBtn" onclick="handleStartSession()">Start Session</button>
                     <div><p>Admin only can exclude or reinstate voters</p></div>
                 </div>
                 <div id="voting-phase" style="display:none;">
                     <h4>Voting Phase</h4>
                     <p>Voting is currently in progress. Topic: <span id="adminVotingTopic"></span></p>
-                    <button id="endVotingBtn">End Voting</button>
+                    <button id="endVotingBtn" onclick="handleEndVoting()">End Voting</button>
                 </div>
                 <div id="reveal-phase" style="display:none;">
                     <h4>Reveal Phase</h4>
                     <p>Voting has ended. Topic: <span id="adminRevealTopic"></span></p>
                     <p>Results are available. Click below to start a new session.</p>
-                    <button id="startNewSessionBtn">Start New Session</button>
+                    <button id="startNewSessionBtn" onclick="handleStartNewSession()">Start New Session</button>
                 </div>
             </div>
 
@@ -54,7 +54,7 @@
                 <p id="participantVotingStatus"></p>
                 <h4 id="participantVotingTopic"></h4>
                 <div id="options-container"></div>
-                <button id="submitVoteBtn" disabled>Submit Vote</button>
+                <button id="submitVoteBtn" disabled onclick="handleSubmitVote()">Submit Vote</button>
             </div>
             
             <div id="results-display" style="display:none;">
