@@ -136,7 +136,13 @@ async function loadContractData(phase) {
 
     if (userRole === 'Coordinator') {
         document.getElementById('sessionIdDisplay').textContent = sessionId;
-        const excludedVoters = await votingContract.methods.getExcludedVoters().call();
+        let excludedVoters;
+        try {
+            excludedVoters = await votingContract.methods.getExcludedVoters().call();
+        } catch (error) {
+            console.error("Error fetching excluded voters:", error);
+            return;
+        }
         const excludedListElement = document.getElementById('excludedVotersList');
         excludedListElement.innerHTML = '';
         if (excludedVoters.length > 0) {
