@@ -108,9 +108,11 @@ function displaySectionsByPhase(phase) {
     document.getElementById('setup-phase').style.display = 'none';
     document.getElementById('voting-phase').style.display = 'none';
     document.getElementById('reveal-phase').style.display = 'none';
+    document.getElementById('admin-voter-controls').style.display = 'none';
 
     if (userRole === "Coordinator") {
         document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-voter-controls').style.display = 'none';
         if (phase === 'Setup') {
             document.getElementById('setup-phase').style.display = 'block';
         } else if (phase === 'Voting') {
