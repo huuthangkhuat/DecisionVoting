@@ -95,7 +95,11 @@ async function updateUI() {
 
     // Trigger display logic based on role and phase
     displaySectionsByPhase(phase);
-    loadContractData(phase);
+    try {
+        await loadContractData(phase);
+    } catch (error) {
+        console.error("Error fetching contract data during UI update:", error);
+    }
 }
 
 function displaySectionsByPhase(phase) {
