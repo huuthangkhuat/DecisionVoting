@@ -103,7 +103,7 @@ async function handleSubmitVote() {
 // Load and display excluded voters list
 async function handleLoadExcludedVoters() {
     try {
-        const excludedVoters = await votingContract.methods.getExcludedVoters().call();
+        const excludedVoters = await votingContract.methods.getExcludedVoters().call({ from: userAccount });
         const excludedListElement = document.getElementById('excludedVotersList');
         excludedListElement.innerHTML = '';
         if (excludedVoters.length > 0) {
