@@ -83,7 +83,7 @@ async function updateUI() {
     let phase;
 
     try {
-        const phase = await votingContract.methods.getPhase().call();
+        phase = await votingContract.methods.getPhase().call();
         currentStatusSpan.textContent = phase;
         console.log("Current contract phase:", phase);
 
@@ -95,11 +95,7 @@ async function updateUI() {
 
     // Trigger display logic based on role and phase
     displaySectionsByPhase(phase);
-    try {
-        await loadContractData(phase);
-    } catch (error) {
-        console.error("Error fetching contract data during UI update:", error);
-    }
+    loadContractData(phase);
 }
 
 function displaySectionsByPhase(phase) {
@@ -147,6 +143,7 @@ async function loadContractData(phase) {
         }
         const excludedListElement = document.getElementById('excludedVotersList');
         excludedListElement.innerHTML = '';
+        console.log("Excluded voters:", excludedVoters);
         if (excludedVoters.length > 0) {
             excludedVoters.forEach(voter => {
                 const li = document.createElement('li');
