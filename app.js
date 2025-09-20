@@ -121,6 +121,7 @@ function displaySectionsByPhase(phase) {
         } else if (phase === 'Reveal') {
             document.getElementById('reveal-phase').style.display = 'block';
             document.getElementById('admin-voter-check').style.display = 'block';
+            document.getElementById('results-display').style.display = 'block';
         }
     } else {
         document.getElementById('participant-panel').style.display = 'block';
