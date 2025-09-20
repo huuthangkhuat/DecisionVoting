@@ -109,10 +109,10 @@ function displaySectionsByPhase(phase) {
     console.log(`Displaying sections for role: ${userRole}, phase: ${phase}`);
     if (userRole === "Coordinator") {
         document.getElementById('admin-panel').style.display = 'block';
-        document.getElementById('admin-voter-controls').style.display = 'block';
         if (phase === 'Setup') {
             console.log("In Setup phase, showing setup controls.");
             document.getElementById('setup-phase').style.display = 'block';
+            document.getElementById('admin-voter-controls').style.display = 'block';
         } else if (phase === 'Voting') {
             document.getElementById('voting-phase').style.display = 'block';
             document.getElementById('admin-voter-check').style.display = 'block';
