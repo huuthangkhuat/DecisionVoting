@@ -95,8 +95,15 @@ async function handleSubmitVote() {
         alert("Your vote has been cast successfully!");
         updateUI(); // Refresh UI after transaction
     } catch (error) {
-        console.error("Failed to cast vote:", error);
-        alert("Transaction failed. Check console for details.");
+        // Check for specific revert reasons in the error object.
+        let errorMessage = "Transaction failed. Check console for details.";
+        if (error.message.includes("You are not eligible to vote")) {
+            errorMessage = "You are not eligible to vote in this session.";
+        } else if (error.message.includes("You have already voted")) {
+            errorMessage = "You have already voted in this session.";
+        }
+
+        alert(errorMessage);
     }
 }
 
