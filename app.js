@@ -176,7 +176,7 @@ async function loadContractData(phase) {
         });
         
         // Check if participant has voted and update UI
-        const hasVoted = await votingContract.methods.voteStatus().call({ from: userAccount });
+        const hasVoted = await votingContract.methods.voteStatus().call();
         if (hasVoted) {
             document.getElementById('participantVotingStatus').textContent = "You have already voted.";
             document.getElementById('submitVoteBtn').disabled = true;
