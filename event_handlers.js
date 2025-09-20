@@ -2,7 +2,6 @@
 
 // Admin functions logic
 async function handleStartSession() {
-    console.log("Starting new voting session...");
     const topic = document.getElementById('topicInput').value;
     const optionsString = document.getElementById('optionsInput').value;
     const optionsArray = optionsString.split(',').map(s => s.trim());
@@ -19,12 +18,11 @@ async function handleStartSession() {
         updateUI(); // Refresh UI after transaction
     } catch (error) {
         console.error("Failed to start session:", error);
-        alert("Transaction failed. Check console for details.");
+        alert(error.message);
     }
 }
 
 async function handleEndVoting() {
-    console.log("Ending voting...");
     try {
         await votingContract.methods.endVoting().call({ from: userAccount });
         await votingContract.methods.endVoting().send({ from: userAccount });
@@ -32,12 +30,11 @@ async function handleEndVoting() {
         updateUI(); // Refresh UI after transaction
     } catch (error) {
         console.error("Failed to end voting:", error);
-        alert("Transaction failed. Check console for details.");
+        alert(error.message);
     }
 }
 
 async function handleStartNewSession() {
-    console.log("Starting new session setup...");
     try {
         await votingContract.methods.startSetup().call({ from: userAccount });
         await votingContract.methods.startSetup().send({ from: userAccount });
@@ -45,12 +42,11 @@ async function handleStartNewSession() {
         updateUI(); // Refresh UI after transaction
     } catch (error) {
         console.error("Failed to start new session:", error);
-        alert("Transaction failed. Check console for details.");
+        alert(error.message);
     }
 }
 
 async function handleExcludeVoter() {
-    console.log("Excluding voter...");
     const voterAddress = document.getElementById('voterAddressInput').value;
     if (!web3.utils.isAddress(voterAddress)) {
         alert("Please enter a valid Ethereum address.");
@@ -63,12 +59,11 @@ async function handleExcludeVoter() {
         updateUI();
     } catch (error) {
         console.error("Failed to exclude voter:", error);
-        alert("Transaction failed. Check console for details.");
+        alert(error.message);
     }
 }
 
 async function handleReinstateVoter() {
-    console.log("Reinstating voter...");
     const voterAddress = document.getElementById('voterAddressInput').value;
     if (!web3.utils.isAddress(voterAddress)) {
         alert("Please enter a valid Ethereum address.");
@@ -81,13 +76,12 @@ async function handleReinstateVoter() {
         updateUI();
     } catch (error) {
         console.error("Failed to reinstate voter:", error);
-        alert("Transaction failed. Check console for details.");
+        alert(error.message);
     }
 }
 
 // Participant functions logic
 async function handleSubmitVote() {
-    console.log("Submitting vote...");
     const selectedOption = document.querySelector('input[name="voteOption"]:checked');
     if (!selectedOption) {
         alert("Please select an option to vote.");
@@ -102,7 +96,7 @@ async function handleSubmitVote() {
         updateUI(); // Refresh UI after transaction
     } catch (error) {
         console.error("Failed to submit vote:", error);
-        alert("Transaction failed. Check console for details.");
+        alert(error.message);
     }
 }
 
@@ -121,6 +115,6 @@ async function handleCheckVoterStatus() {
         voterStatusResult.textContent = `Voter ${voterAddress} has voted: ${hasVoted}`;
     } catch (error) {
         console.error("Failed to check voter status:", error);
-        voterStatusResult.textContent = "Error: Failed to check status. Check console for details.";
+        alert(error.message);
     }
 }
