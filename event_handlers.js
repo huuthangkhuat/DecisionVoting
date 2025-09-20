@@ -36,11 +36,17 @@ function logEventsFromReceipt(receipt) {
     if (receipt.events.VoteCasted) {
         const event = receipt.events.VoteCasted;
         const { sessionId, _voter, _optionIndex } = event.returnValues;
+
+        // Retrieve option text directly from the DOM
+        const optionsContainer = document.getElementById('options-container');
+        const votedOptionElement = optionsContainer.querySelector(`input[name="voteOption"][value="${_optionIndex}"]`);
+        const votedOptionText = votedOptionElement ? votedOptionElement.parentNode.textContent.trim() : `Option at index ${_optionIndex}`;
+
         console.log(`Event 'VoteCasted' emitted:
         - sessionId: ${sessionId}
         - voter: ${_voter}
         - optionIndex: ${_optionIndex}`);
-        alert(`Vote casted successfully by ${_voter} for option index ${_optionIndex}`);
+        alert(`Vote casted successfully by ${_voter} for option: ${votedOptionText}`);
         updateUI();
     }
 
