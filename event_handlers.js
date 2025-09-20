@@ -71,6 +71,7 @@ async function handleReinstateVoter() {
         return;
     }
     try {
+        await votingContract.methods.reinstateVoter(voterAddress).call({ from: userAccount });
         await votingContract.methods.reinstateVoter(voterAddress).send({ from: userAccount });
         alert("Voter reinstated successfully.");
         updateUI();
