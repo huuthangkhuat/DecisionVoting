@@ -103,6 +103,8 @@ async function handleSubmitVote() {
             errorMessage = "You have already voted in this session.";
         }
 
+        console.log("Failed to cast vote:", error);
+
         alert(errorMessage);
     }
 }
