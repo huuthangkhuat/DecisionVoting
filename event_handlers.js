@@ -91,11 +91,13 @@ async function handleSubmitVote() {
 
     const optionIndex = selectedOption.value;
     try {
+        await votingContract.methods.castVote(optionIndex).call({ from: userAccount });
         await votingContract.methods.castVote(optionIndex).send({ from: userAccount });
         alert("Your vote has been cast successfully!");
         updateUI(); // Refresh UI after transaction
     } catch (error) {
-        console.error("Failed to cast vote:", error.receipt);
+        console.error("Failed to submit vote:", error);
+        console.error("Receipt:", error.receipt);
         alert("Transaction failed. Check console for details.");
     }
 }
