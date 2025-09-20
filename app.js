@@ -23,8 +23,6 @@ async function connectWallet() {
             web3 = new Web3(window.ethereum);
             votingContract = new web3.eth.Contract(contractABI, contractAddress);
             updateUI();
-            // Set up event listeners after connecting
-            setup_listeners(votingContract);
         } catch (error) {
             console.error("User denied account access or another error occurred:", error);
             alert("Connection failed. Please check MetaMask.");
