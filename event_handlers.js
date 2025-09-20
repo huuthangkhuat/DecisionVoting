@@ -13,6 +13,7 @@ async function handleStartSession() {
     }
 
     try {
+        await votingContract.methods.startSession(topic, optionsArray).call({ from: userAccount });
         await votingContract.methods.startSession(topic, optionsArray).send({ from: userAccount });
         alert("Session started successfully!");
         updateUI(); // Refresh UI after transaction
@@ -25,6 +26,7 @@ async function handleStartSession() {
 async function handleEndVoting() {
     console.log("Ending voting...");
     try {
+        await votingContract.methods.endVoting().call({ from: userAccount });
         await votingContract.methods.endVoting().send({ from: userAccount });
         alert("Voting has ended.");
         updateUI(); // Refresh UI after transaction
@@ -37,6 +39,7 @@ async function handleEndVoting() {
 async function handleStartNewSession() {
     console.log("Starting new session setup...");
     try {
+        await votingContract.methods.startSetup().call({ from: userAccount });
         await votingContract.methods.startSetup().send({ from: userAccount });
         alert("New session is ready for setup.");
         updateUI(); // Refresh UI after transaction
@@ -54,6 +57,7 @@ async function handleExcludeVoter() {
         return;
     }
     try {
+        await votingContract.methods.excludeVoter(voterAddress).call({ from: userAccount });
         await votingContract.methods.excludeVoter(voterAddress).send({ from: userAccount });
         alert("Voter excluded successfully.");
         updateUI();
@@ -98,7 +102,6 @@ async function handleSubmitVote() {
         updateUI(); // Refresh UI after transaction
     } catch (error) {
         console.error("Failed to submit vote:", error);
-        console.error("Receipt:", error.receipt);
         alert("Transaction failed. Check console for details.");
     }
 }
