@@ -1,75 +1,56 @@
-// event_listeners.js
+function logEventsFromReceipt(receipt) {
+  if (!receipt || !receipt.events) {
+    console.log("No events emitted by this transaction.");
+    return;
+  }
 
-// Function to set up all event listeners for the DApp
-function setup_listeners(votingContract) {
-    // Listen for the start of a new session
-    votingContract.events.SessionStarted({}, (error, event) => {
-        console.log("Setting up event listeners...");
-        if (error) {
-            console.error("Error with SessionStarted event:", error);
-        } else {
-            console.log("SessionStarted event received:", event);
-            console.log("Topic:", event.returnValues._topic);
-            console.log("Options:", event.returnValues._options);
-            alert(`New session started!\nTopic: ${event.returnValues._topic}\nOptions: ${event.returnValues._options.join(", ")}`);
-            updateUI();
-        }
-    });
+  // Log all events from the receipt
+  console.log("Events emitted by the transaction:", receipt.events);
 
-    // Listen for a vote being cast
-    votingContract.events.VoteCasted({}, (error, event) => {
-        console.log("Listening for VoteCasted events...");
-        if (error) {
-            console.error("Error with VoteCasted event:", error);
-        } else {
-            console.log("VoteCasted event received:", event);
-            updateUI();
-        }
-    });
+  // Check for specific events and log their return values
+  if (receipt.events.SessionStarted) {
+    const event = receipt.events.SessionStarted;
+    const { sessionId, _topic, _options } = event.returnValues;
+    console.log(`Event 'SessionStarted' emitted:
+      - sessionId: ${sessionId}
+      - topic: ${_topic}
+      - options: ${_options.join(', ')}`);
+  }
 
-    // Listen for the end of the voting phase
-    votingContract.events.VotingEnded({}, (error, event) => {
-        console.log("Listening for VotingEnded events...");
-        if (error) {
-            console.error("Error with VotingEnded event:", error);
-        } else {
-            console.log("VotingEnded event received:", event);
-            alert("Voting has ended. Results can now be revealed.");
-            updateUI();
-        }
-    });
-    
-    // Listen for results being revealed
-    votingContract.events.ResultsRevealed({}, (error, event) => {
-        console.log("Listening for ResultsRevealed events...");
-        if (error) {
-            console.error("Error with ResultsRevealed event:", error);
-        } else {
-            console.log("ResultsRevealed event received:", event);
-            alert("Results are now available!");
-            updateUI();
-        }
-    });
+  if (receipt.events.VoteCasted) {
+    const event = receipt.events.VoteCasted;
+    const { sessionId, _voter, _optionIndex } = event.returnValues;
+    console.log(`Event 'VoteCasted' emitted:
+      - sessionId: ${sessionId}
+      - voter: ${_voter}
+      - optionIndex: ${_optionIndex}`);
+  }
 
-    // Listen for a voter being excluded
-    votingContract.events.VoterExcluded({}, (error, event) => {
-        console.log("Listening for VoterExcluded events...");
-        if (error) {
-            console.error("Error with VoterExcluded event:", error);
-        } else {
-            console.log("VoterExcluded event received:", event);
-            updateUI();
-        }
-    });
+  if (receipt.events.VotingEnded) {
+    const event = receipt.events.VotingEnded;
+    const { sessionId } = event.returnValues;
+    console.log(`Event 'VotingEnded' emitted for sessionId: ${sessionId}`);
+  }
 
-    // Listen for a voter being reinstated
-    votingContract.events.VoterReinstated({}, (error, event) => {
-        console.log("Listening for VoterReinstated events...");
-        if (error) {
-            console.error("Error with VoterReinstated event:", error);
-        } else {
-            console.log("VoterReinstated event received:", event);
-            updateUI();
-        }
-    });
+  if (receipt.events.ResultsRevealed) {
+    const event = receipt.events.ResultsRevealed;
+    const { sessionId } = event.returnValues;
+    console.log(`Event 'ResultsRevealed' emitted for sessionId: ${sessionId}`);
+  }
+
+  if (receipt.events.VoterExcluded) {
+    const event = receipt.events.VoterExcluded;
+    const { sessionId, voter } = event.returnValues;
+    console.log(`Event 'VoterExcluded' emitted:
+      - sessionId: ${sessionId}
+      - voter: ${voter}`);
+  }
+
+  if (receipt.events.VoterReinstated) {
+    const event = receipt.events.VoterReinstated;
+    const { sessionId, voter } = event.returnValues;
+    console.log(`Event 'VoterReinstated' emitted:
+      - sessionId: ${sessionId}
+      - voter: ${voter}`);
+  }
 }
