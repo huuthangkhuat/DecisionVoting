@@ -4,6 +4,7 @@
 function setup_listeners(votingContract) {
     // Listen for the start of a new session
     votingContract.events.SessionStarted({}, (error, event) => {
+        console.log("Setting up event listeners...");
         if (error) {
             console.error("Error with SessionStarted event:", error);
         } else {
@@ -17,6 +18,7 @@ function setup_listeners(votingContract) {
 
     // Listen for a vote being cast
     votingContract.events.VoteCasted({}, (error, event) => {
+        console.log("Listening for VoteCasted events...");
         if (error) {
             console.error("Error with VoteCasted event:", error);
         } else {
@@ -27,6 +29,7 @@ function setup_listeners(votingContract) {
 
     // Listen for the end of the voting phase
     votingContract.events.VotingEnded({}, (error, event) => {
+        console.log("Listening for VotingEnded events...");
         if (error) {
             console.error("Error with VotingEnded event:", error);
         } else {
@@ -38,6 +41,7 @@ function setup_listeners(votingContract) {
     
     // Listen for results being revealed
     votingContract.events.ResultsRevealed({}, (error, event) => {
+        console.log("Listening for ResultsRevealed events...");
         if (error) {
             console.error("Error with ResultsRevealed event:", error);
         } else {
@@ -49,6 +53,7 @@ function setup_listeners(votingContract) {
 
     // Listen for a voter being excluded
     votingContract.events.VoterExcluded({}, (error, event) => {
+        console.log("Listening for VoterExcluded events...");
         if (error) {
             console.error("Error with VoterExcluded event:", error);
         } else {
@@ -59,6 +64,7 @@ function setup_listeners(votingContract) {
 
     // Listen for a voter being reinstated
     votingContract.events.VoterReinstated({}, (error, event) => {
+        console.log("Listening for VoterReinstated events...");
         if (error) {
             console.error("Error with VoterReinstated event:", error);
         } else {
