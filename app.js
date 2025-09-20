@@ -6,6 +6,7 @@ const contractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constru
 let votingContract;
 let userAccount;
 let userRole; // "Coordinator" or "Participant"
+let web3; // Added web3 to be globally available
 
 // DOM elements
 const userAddressSpan = document.getElementById('userAddress');
@@ -22,6 +23,8 @@ async function connectWallet() {
             web3 = new Web3(window.ethereum);
             votingContract = new web3.eth.Contract(contractABI, contractAddress);
             updateUI();
+            // Set up event listeners after connecting
+            event_listeners();
         } catch (error) {
             console.error("User denied account access or another error occurred:", error);
             alert("Connection failed. Please check MetaMask.");
@@ -31,8 +34,91 @@ async function connectWallet() {
     }
 }
 
+// Function to set up more granular event listeners
+function event_listeners() {
+    // Listener for session changes
+    votingContract.events.SessionStarted({}, (error, event) => {
+        if (error) {
+            console.error("Error with SessionStarted event:", error);
+        } else {
+            console.log("Session started! Updating UI...", event.returnValues);
+            // Alert user of new session
+            alert(`New session started!\nTopic: ${event.returnValues._topic}\nOptions: ${event.returnValues._options.join(", ")}`);
+            updateUI();
+        }
+    });
+    
+    // Listener for voting phase changes
+    votingContract.events.VotingEnded({}, (error, event) => {
+        if (error) {
+            console.error("Error with VotingEnded event:", error);
+        } else {
+            console.log("Voting ended! Transitioning to Reveal phase...", event.returnValues);
+            displaySectionsByPhase('Reveal');
+        }
+    });
+
+    // Listener for results being revealed
+    votingContract.events.ResultsRevealed({}, (error, event) => {
+        if (error) {
+            console.error("Error with ResultsRevealed event:", error);
+        } else {
+            console.log("ResultsRevealed event received:", event);
+            updateUI();
+        }
+    });
+
+    // Listener for a vote being casted (newly added)
+    votingContract.events.VoteCasted({}, (error, event) => {
+        if (error) {
+            console.error("Error with VoteCasted event:", error);
+        } else {
+            console.log("VoteCasted event received:", event);
+            updateUI();
+        }
+    });
+
+    // Listener for a voter being excluded (more granular update)
+    votingContract.events.VoterExcluded({}, (error, event) => {
+        if (error) {
+            console.error("Error with VoterExcluded event:", error);
+        } else {
+            console.log("Voter excluded! Updating list...", event.returnValues);
+            // Only update the excluded voters list for the coordinator
+            if (userRole === "Coordinator") {
+                const excludedListElement = document.getElementById('excludedVotersList');
+                const newVoterLi = document.createElement('li');
+                newVoterLi.textContent = event.returnValues.voter;
+                excludedListElement.appendChild(newVoterLi);
+            }
+        }
+    });
+
+    // Listener for a voter being reinstated (more granular update)
+    votingContract.events.VoterReinstated({}, (error, event) => {
+        if (error) {
+            console.error("Error with VoterReinstated event:", error);
+        } else {
+            console.log("Voter reinstated! Updating list...", event.returnValues);
+            // Only update the excluded voters list for the coordinator
+            if (userRole === "Coordinator") {
+                const excludedListElement = document.getElementById('excludedVotersList');
+                const voterAddressToRemove = event.returnValues.voter;
+                const listItems = excludedListElement.getElementsByTagName('li');
+                for (let i = 0; i < listItems.length; i++) {
+                    if (listItems[i].textContent === voterAddressToRemove) {
+                        excludedListElement.removeChild(listItems[i]);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+}
+
 // Update UI with user info and contract status
 async function updateUI() {
+    console.log("Entering updateUI(). userAccount:", userAccount);
 
     if (!userAccount) {
         userAddressSpan.textContent = "Not connected";
