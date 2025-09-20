@@ -107,6 +107,7 @@ function displaySectionsByPhase(phase) {
     document.getElementById('reveal-phase').style.display = 'none';
     document.getElementById('admin-voter-controls').style.display = 'none';
     document.getElementById('admin-voter-check').style.display = 'none';
+    document.getElementById('voting-interface').style.display = 'none';
 
     console.log(`Displaying sections for role: ${userRole}, phase: ${phase}`);
     if (userRole === "Coordinator") {
@@ -127,6 +128,7 @@ function displaySectionsByPhase(phase) {
         document.getElementById('participant-panel').style.display = 'block';
         if (phase === 'Voting') {
             document.getElementById('voting-phase').style.display = 'block';
+            document.getElementById('voting-interface').style.display = 'block';
         } else if (phase === 'Reveal') {
             document.getElementById('results-display').style.display = 'block';
         }
