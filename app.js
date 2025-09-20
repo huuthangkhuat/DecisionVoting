@@ -113,15 +113,14 @@ function displaySectionsByPhase(phase) {
     if (userRole === "Coordinator") {
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('admin-voter-controls').style.display = 'block';
+        document.getElementById('admin-voter-check').style.display = 'block';
         if (phase === 'Setup') {
             console.log("In Setup phase, showing setup controls.");
             document.getElementById('setup-phase').style.display = 'block';
         } else if (phase === 'Voting') {
             document.getElementById('voting-phase').style.display = 'block';
-            document.getElementById('admin-voter-check').style.display = 'block';
         } else if (phase === 'Reveal') {
             document.getElementById('reveal-phase').style.display = 'block';
-            document.getElementById('admin-voter-check').style.display = 'block';
             document.getElementById('results-display').style.display = 'block';
         }
     } else {
