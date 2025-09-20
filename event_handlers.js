@@ -99,3 +99,22 @@ async function handleSubmitVote() {
         alert("Transaction failed. Check console for details.");
     }
 }
+
+// Admin function to check if a specific user has voted
+async function handleCheckVoterStatus() {
+    const voterAddress = document.getElementById('voterCheckAddress').value;
+    const voterStatusResult = document.getElementById('voterStatusResult');
+    
+    if (!web3.utils.isAddress(voterAddress)) {
+        alert("Please enter a valid Ethereum address.");
+        return;
+    }
+    
+    try {
+        const hasVoted = await votingContract.methods.hasUserVoted(voterAddress).call({ from: userAccount });
+        voterStatusResult.textContent = `Voter ${voterAddress} has voted: ${hasVoted}`;
+    } catch (error) {
+        console.error("Failed to check voter status:", error);
+        voterStatusResult.textContent = "Error: Failed to check status. Check console for details.";
+    }
+}

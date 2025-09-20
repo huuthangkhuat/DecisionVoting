@@ -73,6 +73,12 @@
             <button id="excludeVoterBtn" onclick="handleExcludeVoter()">Exclude Voter</button>
             <button id="reinstateVoterBtn" onclick="handleReinstateVoter()">Reinstate Voter</button>
         </section>
+        <section id="admin-voter-check" style="display:none;">
+            <h3>Check Voter Status (Admin Only)</h3>
+            <input type="text" id="voterCheckAddress" placeholder="Enter voter address to check" size="40">
+            <button id="checkVoterStatusBtn" onclick="handleCheckVoterStatus()">Check Status</button>
+            <p id="voterStatusResult"></p>
+        </section>
     </main>
 </body>
 </html>
