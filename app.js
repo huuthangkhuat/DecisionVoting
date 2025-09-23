@@ -95,6 +95,7 @@ async function updateUI() {
     // Trigger display logic based on role and phase
     displaySectionsByPhase(phase);
     loadContractData(phase);
+    displayWarnings(phase);
 }
 
 function displaySectionsByPhase(phase) {
