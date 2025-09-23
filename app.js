@@ -128,7 +128,9 @@ function displaySectionsByPhase(phase) {
         document.getElementById('participant-panel').style.display = 'block';
         document.getElementById('voting-phase').style.display = 'block';
         document.getElementById('voting-interface').style.display = 'block';
-        document.getElementById('results-display').style.display = 'block';
+        if (phase === 'Reveal') {
+            document.getElementById('results-display').style.display = 'block';
+        }
     }
 }
 
