@@ -125,12 +125,9 @@ function displaySectionsByPhase(phase) {
         }
     } else {
         document.getElementById('participant-panel').style.display = 'block';
-        if (phase === 'Voting') {
-            document.getElementById('voting-phase').style.display = 'block';
-            document.getElementById('voting-interface').style.display = 'block';
-        } else if (phase === 'Reveal') {
-            document.getElementById('results-display').style.display = 'block';
-        }
+        document.getElementById('voting-phase').style.display = 'block';
+        document.getElementById('voting-interface').style.display = 'block';
+        document.getElementById('results-display').style.display = 'block';
     }
 }
 
@@ -226,6 +223,8 @@ async function displayWarnings(phase) {
     document.querySelectorAll('.warning-message').forEach(span => span.textContent = '');
 
     if (userRole === "Coordinator") {
+        console.log("Testing warning message for coordinator");
+
         if (phase !== "Setup") {
             document.getElementById('warning-excludeVoterBtn').textContent = "Voter exclusion is only allowed during the Setup phase.";
             document.getElementById('warning-reinstateVoterBtn').textContent = "Voter reinstatement is only allowed during the Setup phase.";
@@ -233,6 +232,8 @@ async function displayWarnings(phase) {
     }
 
     if (userRole === "Participant") {
+        console.log("Testing warning message for coordinator");
+
         if (phase === "Setup") {
             document.getElementById('warning-submitVoteBtn').textContent = "Voting has not started yet.";
         } else if (phase === "Reveal") {
