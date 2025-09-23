@@ -204,8 +204,7 @@ async function loadContractData(phase) {
 
         // Update results display to reflect ongoing voting
         document.getElementById('participantVotingStatus').textContent = "Please select an option and submit your vote.";
-        document.getElementById('winner').textContent = "Results are not yet available.";
-        document.getElementById('results-list').innerHTML = "<li>Voting is currently in progress.</li>";
+        document.getElementById('winner').textContent = "Results are not yet available. Voting is currently in progress.";
     
     // Display results and winner during Reveal phase
     } else if (phase === 'Reveal') {
@@ -252,8 +251,7 @@ async function loadContractData(phase) {
     } else if (phase === 'Setup') {
         // Clear voting data and display a message indicating waiting for a session.
         document.getElementById('participantVotingStatus').textContent = "A new session is being set up. Please wait for the coordinator to start voting.";
-        document.getElementById('winner').textContent = "Results are not available during the Setup phase.";
-        document.getElementById('results-list').innerHTML = "<li>Waiting for a new voting session to begin.</li>";
+        document.getElementById('winner').textContent = "Results are not available during the Setup phase. Waiting for a new voting session to begin.";
     }
 }
 
