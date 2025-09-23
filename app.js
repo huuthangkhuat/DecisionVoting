@@ -178,16 +178,6 @@ async function loadContractData(phase) {
             label.innerHTML = `<input type="radio" name="voteOption" value="${index}"> ${option}`;
             optionsContainer.appendChild(label);
         });
-        
-        // Check if participant has voted and update UI
-        const hasVoted = await votingContract.methods.voteStatus().call();
-        if (hasVoted) {
-            document.getElementById('participantVotingStatus').textContent = "You have already voted.";
-            document.getElementById('submitVoteBtn').disabled = true;
-        } else {
-            document.getElementById('participantVotingStatus').textContent = "Please cast your vote.";
-            document.getElementById('submitVoteBtn').disabled = false;
-        }
 
     } else if (phase === 'Reveal') {
         const topic = await votingContract.methods.getTopic().call();
@@ -223,6 +213,36 @@ async function loadContractData(phase) {
             document.getElementById('winner').textContent = `The winner is: ${winners[0]}`;
         } else {
             document.getElementById('winner').textContent = `It's a tie between: ${winners.join(" and ")}`;
+        }
+    }
+}
+
+// Function to display dynamic warning messages without disabling buttons
+async function displayWarnings(phase) {
+    const hasVoted = await votingContract.methods.voteStatus().call({ from: userAccount });
+    const isExcluded = await votingContract.methods.isExcluded(userAccount).call({ from: userAccount });
+
+    // Clear previous warnings
+    document.querySelectorAll('.warning-message').forEach(span => span.textContent = '');
+
+    if (userRole === "Coordinator") {
+        if (phase !== "Setup") {
+            document.getElementById('warning-excludeVoterBtn').textContent = "Voter exclusion is only allowed during the Setup phase.";
+            document.getElementById('warning-reinstateVoterBtn').textContent = "Voter reinstatement is only allowed during the Setup phase.";
+        }
+    }
+
+    if (userRole === "Participant") {
+        if (phase === "Setup") {
+            document.getElementById('warning-submitVoteBtn').textContent = "Voting has not started yet.";
+        } else if (phase === "Reveal") {
+            document.getElementById('warning-submitVoteBtn').textContent = "Voting has ended.";
+        } else if (phase === "Voting") {
+            if (hasVoted) {
+                document.getElementById('warning-submitVoteBtn').textContent = "You have already voted in this session.";
+            } else if (isExcluded) {
+                document.getElementById('warning-submitVoteBtn').textContent = "You are not eligible to vote in this session.";
+            }
         }
     }
 }

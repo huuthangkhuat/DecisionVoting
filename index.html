@@ -8,6 +8,12 @@
     <script src="metamask_helpers.js" defer></script>
     <script src="app.js" defer></script>
     <script src="event_handlers.js" defer></script> 
+    <style>
+        .warning-message {
+            color: red;
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -58,6 +64,7 @@
                 <h4 id="participantVotingTopic"></h4>
                 <div id="options-container"></div>
                 <button id="submitVoteBtn" disabled onclick="handleSubmitVote()">Submit Vote</button>
+                <span id="warning-submitVoteBtn" class="warning-message"></span>
             </div>
             
             <div id="results-display" style="display:none;">
@@ -72,7 +79,9 @@
             <ul id="excludedVotersList"></ul>
             <input type="text" id="voterAddressInput" placeholder="Enter voter address" size="40">
             <button id="excludeVoterBtn" onclick="handleExcludeVoter()">Exclude Voter</button>
+            <span id="warning-excludeVoterBtn" class="warning-message"></span>
             <button id="reinstateVoterBtn" onclick="handleReinstateVoter()">Reinstate Voter</button>
+            <span id="warning-reinstateVoterBtn" class="warning-message"></span>
         </section>
         <section id="admin-voter-check" style="display:none;">
             <h3>Check Voter Status (Admin Only)</h3>
