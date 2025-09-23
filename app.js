@@ -136,6 +136,12 @@ function displaySectionsByPhase(phase) {
 
 async function loadContractData(phase) {
     const sessionId = await votingContract.methods.currentSessionId().call();
+    const isExcluded = await votingContract.methods.ifExcluded().call();
+
+    // Resetting vote status display
+    document.getElementById('winner').textContent = "";
+    document.getElementById('results-list').innerHTML = '';
+
 
     if (userRole === 'Coordinator') {
         console.log("Loading admin data for session:", sessionId);
@@ -179,6 +185,21 @@ async function loadContractData(phase) {
             optionsContainer.appendChild(label);
         });
 
+        const hasVoted = await votingContract.methods.voteStatus().call();
+
+        // Update participant voting status message
+        if (isExcluded) {
+            document.getElementById('participantVotingStatus').textContent = "You are currently excluded from voting.";
+        } else if (hasVoted) {
+            document.getElementById('participantVotingStatus').textContent = "You have already cast your vote for this session.";
+        } else {
+            document.getElementById('participantVotingStatus').textContent = "Please select an option and submit your vote.";
+        }
+
+        // Update results display to reflect ongoing voting
+        document.getElementById('winner').textContent = "Results are not yet available.";
+        document.getElementById('results-list').innerHTML = "<li>Voting is currently in progress.</li>";
+
     } else if (phase === 'Reveal') {
         const topic = await votingContract.methods.getTopic().call();
         const results = await votingContract.methods.getResults().call();
@@ -214,6 +235,11 @@ async function loadContractData(phase) {
         } else {
             document.getElementById('winner').textContent = `It's a tie between: ${winners.join(" and ")}`;
         }
+    } else if (phase === 'Setup') {
+        // Clear voting data and display a message indicating waiting for a session.
+        document.getElementById('participantVotingStatus').textContent = "A new session is being set up. Please wait for the coordinator to start voting.";
+        document.getElementById('winner').textContent = "Results are not available during the Setup phase.";
+        document.getElementById('results-list').innerHTML = "<li>Waiting for a new voting session to begin.</li>";
     }
 }
 
@@ -224,8 +250,6 @@ async function displayWarnings(phase) {
     document.querySelectorAll('.warning-message').forEach(span => span.textContent = '');
 
     if (userRole === "Coordinator") {
-        console.log("Testing warning message for coordinator");
-
         if (phase !== "Setup") {
             document.getElementById('warning-excludeVoterBtn').textContent = "Voter exclusion is only allowed during the Setup phase.";
             document.getElementById('warning-reinstateVoterBtn').textContent = "Voter reinstatement is only allowed during the Setup phase.";
@@ -233,7 +257,6 @@ async function displayWarnings(phase) {
     }
 
     if (userRole === "Participant") {
-        console.log("Testing warning message for participant");
         const hasVoted = await votingContract.methods.voteStatus().call({ from: userAccount });
         const isExcluded = await votingContract.methods.ifExcluded().call({ from: userAccount });        
 
