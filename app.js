@@ -12,6 +12,7 @@ let web3;
 const userAddressSpan = document.getElementById('userAddress');
 const userRoleSpan = document.getElementById('userRole');
 const networkNameSpan = document.getElementById('networkName');
+const userBalanceSpan = document.getElementById('userBalance');
 const currentStatusSpan = document.getElementById('currentStatus');
 
 // Connect to MetaMask
@@ -43,6 +44,7 @@ async function updateUI() {
         userAddressSpan.textContent = "Not connected";
         userRoleSpan.textContent = "N/A";
         networkNameSpan.textContent = "N/A";
+        userBalanceSpan.textContent = "N/A";
         currentStatusSpan.textContent = "Please connect your wallet.";
         return;
     }
@@ -61,6 +63,16 @@ async function updateUI() {
     }
 
     networkNameSpan.textContent = networkName;
+
+    // Set user balance
+    let userBalance;
+    try {
+        userBalance = await get_user_balance(userAccount);
+        userBalanceSpan.textContent = `${userBalance} ETH`;
+    } catch (error) {
+        console.error("Error fetching user balance:", error);
+        userBalanceSpan.textContent = "Error fetching balance";
+    }
 
     // Get coordinator address
     let coordinatorAddress; 
@@ -98,48 +110,8 @@ async function updateUI() {
     currentStatusSpan.textContent = phase;
 
     // Trigger display logic based on role and phase
-    displaySectionsByPhase(phase);
     loadContractData(phase);
     displayWarnings(phase);
-}
-
-function displaySectionsByPhase(phase) {
-    // Hide all panels initially
-    document.getElementById('admin-panel').style.display = 'none';
-    document.getElementById('participant-panel').style.display = 'none';
-    document.getElementById('results-display').style.display = 'none';
-    document.getElementById('setup-phase').style.display = 'none';
-    document.getElementById('voting-phase').style.display = 'none';
-    document.getElementById('reveal-phase').style.display = 'none';
-    document.getElementById('admin-voter-controls').style.display = 'none';
-    document.getElementById('admin-voter-check').style.display = 'none';
-    document.getElementById('voting-interface').style.display = 'none';
-
-    // Show relevant sections based on role and phase
-    // Admin controls are always shown to the coordinator
-    if (userRole === "Coordinator") {
-        // Show admin panel and voter management controls
-        document.getElementById('admin-panel').style.display = 'block';
-        document.getElementById('admin-voter-controls').style.display = 'block';
-        document.getElementById('admin-voter-check').style.display = 'block';
-
-        // Show phase-specific sections
-        if (phase === 'Setup') {
-            document.getElementById('setup-phase').style.display = 'block';
-        } else if (phase === 'Voting') {
-            document.getElementById('voting-phase').style.display = 'block';
-        } else if (phase === 'Reveal') {
-            document.getElementById('reveal-phase').style.display = 'block';
-            document.getElementById('results-display').style.display = 'block';
-        }
-    
-        // Show participant panel
-    } else {
-        document.getElementById('participant-panel').style.display = 'block';
-        document.getElementById('voting-phase').style.display = 'block';
-        document.getElementById('voting-interface').style.display = 'block';
-        document.getElementById('results-display').style.display = 'block';
-    }
 }
 
 // Function to log events from transaction receipt
@@ -148,10 +120,19 @@ async function loadContractData(phase) {
     // Get current session ID and exclusion status
     const sessionId = await votingContract.methods.currentSessionId().call();
 
-    // Resetting vote status display
-    document.getElementById('participantVotingStatus').textContent = "";
-    document.getElementById('winner').textContent = "";
-    document.getElementById('results-list').innerHTML = '';
+    // Load topic and options
+    const topic = await votingContract.methods.getTopic().call();
+    const options = await votingContract.methods.getOptions().call();
+    document.getElementById('CurrentTopic').textContent = topic;
+
+    // Populate options list for participants
+    const optionsContainer = document.getElementById('options-container');
+    optionsContainer.innerHTML = '';
+    options.forEach((option, index) => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="radio" name="voteOption" value="${index}"> ${option}`;
+        optionsContainer.appendChild(label);
+    });
 
     // Load admin-specific data
     if (userRole === 'Coordinator') {
@@ -182,25 +163,13 @@ async function loadContractData(phase) {
         }
         // Load participant-specific data
     } else {
-        document.getElementById('participantSessionIdDisplay').textContent = sessionId;
+        const excludedListElement = document.getElementById('excludedVotersList');
+        excludedListElement.textContent = "Only admin can view this.";
     }
+    
     // Load phase-specific data for participants
     // Display voting options and status during Voting phase
     if (phase === 'Voting') {
-        const topic = await votingContract.methods.getTopic().call();
-        const options = await votingContract.methods.getOptions().call();
-        
-        document.getElementById('adminVotingTopic').textContent = topic;
-        document.getElementById('participantVotingTopic').textContent = topic;
-
-        // Populate options list for participants
-        const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = '';
-        options.forEach((option, index) => {
-            const label = document.createElement('label');
-            label.innerHTML = `<input type="radio" name="voteOption" value="${index}"> ${option}`;
-            optionsContainer.appendChild(label);
-        });
 
         // Update results display to reflect ongoing voting
         document.getElementById('participantVotingStatus').textContent = "Please select an option and submit your vote.";
@@ -209,12 +178,8 @@ async function loadContractData(phase) {
     // Display results and winner during Reveal phase
     } else if (phase === 'Reveal') {
         // Fetch and display voting results
-        const topic = await votingContract.methods.getTopic().call();
         const results = await votingContract.methods.getResults().call();
-        const options = await votingContract.methods.getOptions().call();
         
-        document.getElementById('adminRevealTopic').textContent = topic;
-
         // Display results
         const resultsList = document.getElementById('results-list');
         resultsList.innerHTML = '';
@@ -263,15 +228,30 @@ async function displayWarnings(phase) {
 
     // Warnings for Coordinator
     if (userRole === "Coordinator") {
-        // Beside set up phase, exclusion and reinstatement are not allowed
-        if (phase !== "Setup") {
-            document.getElementById('warning-excludeVoterBtn').textContent = "Voter exclusion is only allowed during the Setup phase.";
-            document.getElementById('warning-reinstateVoterBtn').textContent = "Voter reinstatement is only allowed during the Setup phase.";
+        if (phase === "Setup") {
+            document.getElementById('warning-startNewSessionBtn').textContent = "You can only start a new session after the current one ends.";
+            document.getElementById('warning-endVotingBtn').textContent = "You can only end voting during the Voting phase.";
+            document.getElementById('warning-submitVoteBtn').textContent = "You cannot vote as the coordinator.";
+        } else if (phase === "Voting") {
+            document.getElementById('warning-exclude-reinstateVoterBtn').textContent = "Voter exclusion is only allowed during the Setup phase.";
+            document.getElementById('warning-startSessionBtn').textContent = "A session is already active. Cannot start a new session now.";
+            document.getElementById('warning-startNewSessionBtn').textContent = "You can only start a new session after the current one ends.";
+            document.getElementById('warning-submitVoteBtn').textContent = "You cannot vote as the coordinator.";
+        } else {
+            document.getElementById('warning-exclude-reinstateVoterBtn').textContent = "Voter exclusion and reinstatement are only allowed during the Setup phase.";
+            document.getElementById('warning-startSessionBtn').textContent = "You can only start a new session once setup phase commences.";
+            document.getElementById('warning-endVotingBtn').textContent = "You can only end voting during the Voting phase.";
+            document.getElementById('warning-submitVoteBtn').textContent = "You cannot vote as the coordinator.";
         }
     }
 
     // Warnings for Participant
     if (userRole === "Participant") {
+        document.getElementById('warning-exclude-reinstateVoterBtn').textContent = "Only admin can perform this action.";
+        document.getElementById('warning-startSessionBtn').textContent = "Only admin can perform this action.";
+        document.getElementById('warning-startNewSessionBtn').textContent = "Only admin can perform this action.";
+        document.getElementById('warning-checkVoterStatusBtn').textContent = "Only admin can perform this action.";
+        document.getElementById('warning-endVotingBtn').textContent = "Only admin can perform this action.";
 
         // Check if user has voted or is excluded
         const hasVoted = await votingContract.methods.voteStatus().call({ from: userAccount });
@@ -282,9 +262,16 @@ async function displayWarnings(phase) {
             document.getElementById('warning-submitVoteBtn').textContent = "Voting has not started yet.";
         } else if (phase === "Reveal") {
             document.getElementById('warning-submitVoteBtn').textContent = "Voting has ended.";
+            if (hasVoted) {
+                // Display user's vote
+                handleViewMyVote();
+            }
         } else if (phase === "Voting") {
             if (hasVoted) {
                 document.getElementById('warning-submitVoteBtn').textContent = "You have already voted in this session.";
+                // Display user's vote
+                handleViewMyVote();
+
             } else if (isExcluded) {
                 document.getElementById('warning-submitVoteBtn').textContent = "You are not eligible to vote in this session.";
             }

@@ -290,3 +290,28 @@ async function handleCheckVoterStatus() {
         alert(error.message);
     }
 }
+
+// Participant function to view their casted vote
+async function handleViewMyVote() {
+
+    const myVoteDisplay = document.getElementById('myVoteDisplay');
+    myVoteDisplay.innerHTML = '';
+    
+    // Only fetch if not coordinator
+    if (userRole === 'Participant') {
+        try {
+            // Call the viewMyVote method
+            const myVote = await votingContract.methods.viewMyVote().call({ from: userAccount });
+            
+            // Check if user has voted (myVote is the string representation of the voted option, or "Not Voted")
+            myVoteDisplay.textContent = `Your Voted Option: ${myVote}`;
+
+        } catch (error) {
+            // Error handling for viewMyVote (e.g., if contract view call fails for other reasons)
+            console.error("Failed to fetch user's vote:", error);
+            alert(error.message);
+        }
+    } else {
+        myVoteDisplay.textContent = "Coordinators do not participate in voting.";
+    }
+}

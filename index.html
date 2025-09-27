@@ -24,6 +24,7 @@
             <button id="connectWalletBtn" onclick="connectWallet()">Connect Wallet</button>
             <p><strong>Wallet Address:</strong> <span id="userAddress"></span></p>
             <p><strong>Network:</strong> <span id="networkName"></span></p>
+            <p><strong>Balance:</strong> <span id="userBalance"></span></p>
             <p><strong>User Role:</strong> <span id="userRole">Participant</span></p>
         </section>
 
@@ -32,34 +33,54 @@
         <section id="app-container">
             <h2>Application Status: <span id="currentStatus">Loading...</span></h2>
 
-            <div id="admin-panel" style="display:none;">
-                <h3>Admin Controls</h3>
+            <div id="admin-panel" style="display:block;">
                 <p><strong>Current Session ID:</strong> <span id="sessionIdDisplay"></span></p>
-                <div id="setup-phase" style="display:none;">
-                    <h4>Setup Phase</h4>
+                <p><strong>Topic:</strong> <span id="CurrentTopic"></span></p>
+                <div id="admin-voter-controls" style="display:block;">
+                    <h3>Voter Management</h3>
+                    <p><strong>Current Excluded Voters:</strong></p>
+                    <ul id="excludedVotersList"></ul>
+                    <input type="text" id="voterAddressInput" placeholder="Enter voter address" size="40">
+                    <button id="excludeVoterBtn" onclick="handleExcludeVoter()">Exclude Voter</button>
+                    <button id="reinstateVoterBtn" onclick="handleReinstateVoter()">Reinstate Voter</button>
+                    <span id="warning-exclude-reinstateVoterBtn" class="warning-message"></span>
+                </div>
+                <div id="admin-voter-check" style="display:block;">
+                    <h3>Check Voter Status</h3>
+                    <input type="text" id="voterCheckAddress" placeholder="Enter voter address to check" size="40">
+                    <button id="checkVoterStatusBtn" onclick="handleCheckVoterStatus()">Check Status</button>
+                    <span id="warning-checkVoterStatusBtn" class="warning-message"></span>
+                    <p id="voterStatusResult"></p>
+                </div>
+                <div id="setup-phase" style="display:block;">
+                    <h3>Setup Phase</h3>
                     <input type="text" id="topicInput" placeholder="Enter voting topic">
                     <input type="text" id="optionsInput" placeholder="Enter options, comma-separated">
                     <button id="startSessionBtn" onclick="handleStartSession()">Start Session</button>
-                    <div><p>Admin only can exclude or reinstate voters</p></div>
+                    <span id="warning-startSessionBtn" class="warning-message"></span>
                 </div>
-                <div id="voting-phase" style="display:none;">
-                    <h4>Voting Phase</h4>
-                    <p>Voting is currently in progress. Topic: <span id="adminVotingTopic"></span></p>
+                <div id="voting-phase" style="display:block;">
+                    <h3>Voting Phase</h3>
                     <button id="endVotingBtn" onclick="handleEndVoting()">End Voting</button>
+                    <span id ="warning-endVotingBtn" class="warning-message"></span>
                 </div>
-                <div id="reveal-phase" style="display:none;">
-                    <h4>Reveal Phase</h4>
-                    <p>Voting has ended. Topic: <span id="adminRevealTopic"></span></p>
-                    <p>Results are available. Click below to start a new session.</p>
-                    <button id="startNewSessionBtn" onclick="handleStartNewSession()">Start New Session</button>
+                <div id="reveal-phase" style="display:block;">
+                    <h3>Reveal Phase</h3>
+                    <h4 id="results-display" style="display:block;">
+                        <h4>Result</h4>
+                        <p><span id="winner"></span></p>
+                        <ul id="results-list"></ul>
+                    </h4>
+                    <button id="startNewSessionBtn" onclick="handleStartNewSession()">Start Setup Phase</button>
+                    <span id="warning-startNewSessionBtn" class="warning-message"></span>
                 </div>
             </div>
 
-            <div id="participant-panel" style="display:none;">
+            <div id="participant-panel" style="display:block;">
                 <h3>Participant Voting</h3>
-                <p><strong>Current Session ID:</strong> <span id="participantSessionIdDisplay"></span></p>
+                <p id="myVoteDisplay"></p>
             </div>
-            <div id="voting-interface" style="display:none;">
+            <div id="voting-interface" style="display:block;">
                 <p id="participantVotingStatus"></p>
                 <h4 id="participantVotingTopic"></h4>
                 <div id="options-container"></div>
@@ -67,27 +88,6 @@
                 <span id="warning-submitVoteBtn" class="warning-message"></span>
             </div>
             
-            <div id="results-display" style="display:none;">
-                <h3>Results</h3>
-                <p>Winner: <span id="winner"></span></p>
-                <ul id="results-list"></ul>
-            </div>
-        </section>
-        <section id="admin-voter-controls" style="display:none;">
-            <h3>Voter Management (Admin Only)</h3>
-            <p><strong>Current Excluded Voters:</strong></p>
-            <ul id="excludedVotersList"></ul>
-            <input type="text" id="voterAddressInput" placeholder="Enter voter address" size="40">
-            <button id="excludeVoterBtn" onclick="handleExcludeVoter()">Exclude Voter</button>
-            <span id="warning-excludeVoterBtn" class="warning-message"></span>
-            <button id="reinstateVoterBtn" onclick="handleReinstateVoter()">Reinstate Voter</button>
-            <span id="warning-reinstateVoterBtn" class="warning-message"></span>
-        </section>
-        <section id="admin-voter-check" style="display:none;">
-            <h3>Check Voter Status (Admin Only)</h3>
-            <input type="text" id="voterCheckAddress" placeholder="Enter voter address to check" size="40">
-            <button id="checkVoterStatusBtn" onclick="handleCheckVoterStatus()">Check Status</button>
-            <p id="voterStatusResult"></p>
         </section>
     </main>
 </body>
