@@ -295,7 +295,6 @@ async function handleCheckVoterStatus() {
 async function handleViewMyVote() {
 
     const myVoteDisplay = document.getElementById('myVoteDisplay');
-    myVoteDisplay.innerHTML = '';
     
     // Only fetch if not coordinator
     if (userRole === 'Participant') {
@@ -311,7 +310,5 @@ async function handleViewMyVote() {
             console.error("Failed to fetch user's vote:", error);
             alert(error.message);
         }
-    } else {
-        myVoteDisplay.textContent = "Coordinators do not participate in voting.";
-    }
+    } 
 }

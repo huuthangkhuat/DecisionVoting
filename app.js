@@ -225,6 +225,7 @@ async function displayWarnings(phase) {
 
     // Clear previous warnings
     document.querySelectorAll('.warning-message').forEach(span => span.textContent = '');
+    document.getElementById('myVoteDisplay').textContent = '';
 
     // Warnings for Coordinator
     if (userRole === "Coordinator") {
@@ -263,13 +264,11 @@ async function displayWarnings(phase) {
         } else if (phase === "Reveal") {
             document.getElementById('warning-submitVoteBtn').textContent = "Voting has ended.";
             if (hasVoted) {
-                // Display user's vote
                 handleViewMyVote();
             }
         } else if (phase === "Voting") {
             if (hasVoted) {
                 document.getElementById('warning-submitVoteBtn').textContent = "You have already voted in this session.";
-                // Display user's vote
                 handleViewMyVote();
 
             } else if (isExcluded) {
