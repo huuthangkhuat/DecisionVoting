@@ -142,7 +142,7 @@ async function handleStartSession() {
 
         // Notify user and log events
         alert("Session started successfully!");
-        logEventsFromReceipt(receipt);
+        logEventsFromReceit(receipt);
     } catch (error) {
         // Handle errors
         console.error("Failed to start session:", error);
