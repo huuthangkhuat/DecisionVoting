@@ -1,109 +1,40 @@
 // event_handlers.js
 
-// this function reconstruct the participants list from local storage
-function getCommittedParticipantsFromLocalStorage() {
-    const participants = [];
-    const baseKey = config.LOCAL_STORAGE_KEY + '_';
-    
-    // Iterate over all keys in the browser's local storage
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        
-        // Check if the key matches our specific pattern for saved secrets
-        if (key && key.startsWith(baseKey)) {
-            // The address is the part of the key after the base key
-            const address = key.substring(baseKey.length);
-            participants.push(`${address}`);
-        }
-    }
-    return participants;
-}
-
-// Fixes the overwriting flaw by scoping storage to the address
-function getUniqueStorageKey(address) {
-    return `${config.LOCAL_STORAGE_KEY}_${address.toLowerCase()}`;
-}
-
-// Retrieves the secret data using the current user's address
-function loadLocalCommitment(address) {
-    const uniqueKey = getUniqueStorageKey(address);
-    const data = localStorage.getItem(uniqueKey);
-    if (data) {
-        return JSON.parse(data);
-    }
-    return { optionIndex: null, salt: null };
-}
-
-// Saves the vote index and salt to local storage for persistence
-function saveLocalCommitment(optionIndex, salt, address) {
-    const uniqueKey = getUniqueStorageKey(address);
-    const data = JSON.stringify({ optionIndex, salt });
-    localStorage.setItem(uniqueKey, data);
-}
-
-// Clears the secret data after a successful reveal
-function clearLocalCommitment(address) {
-    const uniqueKey = getUniqueStorageKey(address);
-    localStorage.removeItem(uniqueKey);
-}
-
-// Helper function to generate a secure random salt (nonce)
-function generateSalt() {
-    const salt = web3.utils.randomHex(32).replace('0x', '');
-    return salt;
-}
-
-// Function to calculate the commitment hash: keccak256(index, salt)
-function calculateCommitment(optionIndex, salt) {
-    const abiEncoded = web3.eth.abi.encodeParameters(['uint256', 'string'], [optionIndex, salt]);
-    const commitment = web3.utils.keccak256(abiEncoded);
-    return commitment;
-}
-
-
 function logEventsFromReceipt(receipt) {
     if (!receipt || !receipt.events) {
         return;
     }
 
-    // Event handlers for state changes
+    // Event: SessionStarted (Coordinator starts new session)
     if (receipt.events.SessionStarted) {
         alert(`New voting session started on topic: ${receipt.events.SessionStarted.returnValues._topic}'.`);
-        updateUI();
     }
+
+    // Event: CommenceSetup (Coordinator starts new session setup)
     if (receipt.events.CommenceSetup) {
         alert("System is ready for a new voting session setup.");
-        updateUI();
     }
 
-    // Event: CommitmentCasted (Submission by Participant)
-    if (receipt.events.CommitmentCasted) {
-        const committerAddress = receipt.from;
-        
-        // SAVE SECRET LOCALLY AFTER SUCCESSFUL COMMIT ---
-        const secret = userCommitmentData; 
-        if (secret.optionIndex !== null && secret.salt !== null) {
-            saveLocalCommitment(secret.optionIndex, secret.salt, committerAddress);
-        }
-
-        alert(`Commitment casted successfully by ${committerAddress}.`);
-        updateUI();
+    // Event: VoteCasted (Submission by Participant)
+    if (receipt.events.VoteCasted) {
+        const committerAddress = receipt.events.VoteCasted.returnValues._voter;
+        const cid = receipt.events.VoteCasted.returnValues._cid;
+        alert(`Vote CID ${cid.slice(0, 10)}... casted successfully by ${committerAddress}.`);
     }
 
-    // Event: VotesRevealed (Emitted during Coordinator's batch reveal)
-    if (receipt.events.VotesRevealed) {
-        alert(`Votes has been tallied. Result will display soon`);
-        updateUI();
+
+    // Event: ResultsFinalized (Coordinator finalizes results)
+    if (receipt.events.ResultsFinalized) {
+        alert(`Final results has been submitted and are now on-chain.`);
     }
 
+    // Event: VotingEnded (Coordinator ends voting phase)
     if (receipt.events.VotingEnded) {
         alert("Voting has ended. System moved to Reveal phase. Coordinator must tally results.");
-        updateUI();
     }
 
-    if (receipt.events.VoterExcluded || receipt.events.VoterReinstated) {
-        updateUI();
-    }
+
+    updateUI();
 }
 
 // --- Coordinator Handlers ---
@@ -140,6 +71,12 @@ async function handleEndVoting() {
 
 async function handleStartNewSession() {
     try {
+        const voterCIDs = await getCIDsFromPastEvents();
+        alert(`Cleaning up ${voterCIDs.length} pinned votes from previous session.`);
+        for (const { cid } of voterCIDs) {
+            await unpinFromIPFS(cid);
+        }
+        alert("Previous votes unpinned. Proceeding to start new session setup.");
         await votingContract.methods.startSetup().call({ from: userAccount });
         const receipt = await votingContract.methods.startSetup().send({ from: userAccount });
         logEventsFromReceipt(receipt);
@@ -201,62 +138,109 @@ async function handleCheckVoterStatus() {
     }
 }
 
-// --- Coordinator Batch Reveal Logic (READS FROM LOCAL STORAGE) ---
-async function handleReveal() {
+// Data Retrieval Helper: Extracts all CIDs for the current session.
+async function getCIDsFromPastEvents() {
+    try {
+        const sessionId = await votingContract.methods.currentSessionId().call();
+
+        // 1. Fetch all 'VoteCasted' events using the high-level contract method.
+        const events = await votingContract.getPastEvents('VoteCasted', {
+            // Filter by the indexed sessionId to limit the scope of the search
+            filter: { sessionId: sessionId }, 
+            fromBlock: 0, 
+            toBlock: 'latest'
+        });
+
+        console.log(events);
+
+        const votedManifest = new Map();
+
+        // 2. Process events to build a manifest of unique votes
+        for (const event of events) {
+            const { _voter, _cid } = event.returnValues;
+            
+            // Although the contract prevents duplicate votes, this ensures data cleanliness
+            if (!votedManifest.has(_voter)) {
+                votedManifest.set(_voter, _cid);
+            }
+        }
+        
+        // Convert the Map entries into a clean array of objects for external use
+        const voterCIDs = Array.from(votedManifest, ([voter, cid]) => ({ voter, cid }));
+
+        return voterCIDs;
+
+    } catch (error) {
+        console.error("Error fetching event logs for CIDs:", error);
+        alert("Error fetching CIDs from the blockchain. Check console.");
+        return [];
+    }
+}
+
+// Manages the tally process (off-chain retrieval + submission).
+async function handleTallySubmission() {
     if (userRole !== 'Coordinator') {
-        alert("Access denied. Only the Coordinator can initiate the batch reveal.");
+        alert("Access denied. Only the Coordinator can submit the final tally.");
         return;
     }
 
     const currentPhase = await votingContract.methods.getPhase().call();
     if (currentPhase !== 'Reveal') {
-        alert("Cannot reveal votes. System must be in the Reveal phase.");
+        alert("Cannot submit results. System must be in the Reveal phase.");
         return;
     }
-
-    const committedParticipants = getCommittedParticipantsFromLocalStorage();
-
-    const voters = [];
-    const optionIndexes = [];
-    const salts = [];
     
-    // ITERATE AND READ LOCAL STORAGE FOR EACH COMMITTED PARTICIPANT ---
-    for (const address of committedParticipants) {
-        const secret = loadLocalCommitment(address); 
-        
-        // Only include participants for whom we have a secret saved locally
-        if (secret.optionIndex !== null && secret.salt !== null) {
-            voters.push(address);
-            optionIndexes.push(secret.optionIndex);
-            salts.push(secret.salt);
-        } else {
-            console.warn(`Participant ${address.slice(0, 6)}... committed but their secret is missing from local storage.`);
-        }
+    // 1. RETRIEVE ALL CIDs from the blockchain event logs
+    const voterCIDs = await getCIDsFromPastEvents();
+    console.log("Retrieved voter CIDs:", voterCIDs);
 
-        // Clear local storage after preparing for reveal
-        clearLocalCommitment(address);
+    // 2. TALLY OFF-CHAIN VOTES (Automated using Pinata retrieval)
+    const options = await votingContract.methods.getOptions().call();
+    let finalCounts = new Array(options.length).fill(0);
+    
+    let tallyLog = `Starting automated tally for ${voterCIDs.length} votes:\n\n`;
+
+    for (const { cid } of voterCIDs) {
+        // Fetch the JSON vote document from IPFS via the Pinata gateway
+        await retrieveVoteFromIPFS(cid).then(voteDocument =>{
+            const index = voteDocument.optionIndex;
+            finalCounts[index] += 1;
+            console.log(`Vote for option index ${index} counted from CID ${cid}.`);
+        });
     }
 
-    try {
-        // 1. Call to check for transaction errors
-        await votingContract.methods.revealVotes(voters, optionIndexes, salts).call({ from: userAccount });
-        
-        // 2. Execute the single, large transaction
-        const receipt = await votingContract.methods.revealVotes(voters, optionIndexes, salts).send({ from: userAccount });
+    // 3. DISPLAY & CONFIRM FINAL TALLY
+    let finalResultSummary = "\n========================\nFinal Calculated Tally:\n";
+    options.forEach((option, index) => {
+        finalResultSummary += `- ${option}: ${finalCounts[index]} votes\n`;
+    });
+    finalResultSummary += "========================\n\n";
 
-        alert(`Batch reveal successful for ${voters.length} entries! Results are now final.`);
+    console.log(tallyLog);
+    const confirmation = confirm(`${tallyLog}${finalResultSummary}\nConfirm submission of these calculated results to the blockchain?`);
+
+    if (!confirmation) return;
+
+    // 4. ON-CHAIN SUBMISSION
+    try {
+        // Pre-check the transaction locally
+        await votingContract.methods.setFinalResults(finalCounts).call({ from: userAccount });
+        
+        // Execute the transaction
+        const receipt = await votingContract.methods.setFinalResults(finalCounts).send({ from: userAccount });
+
+        alert(`Final tally successfully submitted for ${finalCounts.length} options!`);
         logEventsFromReceipt(receipt);
     } catch (error) {
-        console.error("Failed to perform batch reveal:", error);
-        alert(error.message || "Failed to reveal votes. Check console for details.");
+        console.error("Failed to submit final results:", error);
+        alert(error.message || "Failed to submit final results. Check console for details.");
     }
 }
 
-
-// --- Participant Handler (CRITICAL CHANGE: Submits Commitment) ---
+// --- Participant Handler ---
 async function handleCommitmentSubmission() {
     const currentPhase = await votingContract.methods.getPhase().call();
-    const hasCommitted = await votingContract.methods.hasUserCommitted().call({ from: userAccount });
+    const hasCommitted = await votingContract.methods.hasUserVoted().call({ from: userAccount });
     const isExcluded = await votingContract.methods.ifExcluded().call({ from: userAccount });
 
     // 1. PHASE CHECK: Must be in Voting Phase
@@ -275,7 +259,7 @@ async function handleCommitmentSubmission() {
         return;
     }
 
-    // 3. GET DATA & CALCULATE COMMITMENT
+    // 3. GET DATA
     const selectedOption = document.querySelector('input[name="voteOption"]:checked');
     if (!selectedOption) {
         alert("Please select an option to vote.");
@@ -283,26 +267,24 @@ async function handleCommitmentSubmission() {
     }
     
     const optionIndex = parseInt(selectedOption.value);
-    const salt = generateSalt();
-    const commitment = calculateCommitment(optionIndex, salt);
-
-    // 4. SAVE SECRET TO CACHE (Used by logEventsFromReceipt on success)
-    userCommitmentData.optionIndex = optionIndex;
-    userCommitmentData.salt = salt;
-
+    
     try {
-        // 5. Submit the hash commitment
-        await votingContract.methods.castCommitment(commitment).call({ from: userAccount });
+        let receipt;
+        // Fetch necessary data
+        const sessionId = await votingContract.methods.currentSessionId().call();
 
-        const receipt = await votingContract.methods.castCommitment(commitment).send({ from: userAccount });
-        
-        logEventsFromReceipt(receipt);
+        // 4. UPLOAD VOTE METADATA TO IPFS (Using the exported service function)
+        const cid = await pinVoteToIPFS(userAccount, sessionId, optionIndex).then(cid => {
+            // 5. Submit the IPFS CID to the contract
+            votingContract.methods.castVote(cid).call({ from: userAccount });
+            votingContract.methods.castVote(cid).send({ from: userAccount }).then(receipt => {
+                logEventsFromReceipt(receipt);
+            })
+        })
 
     } catch (error) {
-        console.error("Failed to submit commitment:", error);
-        alert(error.message);
-        // Clear cache on failure to allow retry
-        userCommitmentData.optionIndex = null;
-        userCommitmentData.salt = null;
+        const errorMsg = error.message.includes("Failed to upload vote data") ? "IPFS upload failed. Could not retrieve CID." : error.message;
+        console.error("Failed to submit vote:", error);
+        alert(errorMsg);
     }
 }

@@ -3,12 +3,6 @@ let userAccount;
 let userRole; 
 let web3; 
 
-// Global object to store the local vote data (acts as cache for localStorage).
-let userCommitmentData = {
-    optionIndex: null, 
-    salt: null         
-};
-
 // DOM elements
 const userAddressSpan = document.getElementById('userAddress');
 const userRoleSpan = document.getElementById('userRole');
@@ -232,7 +226,7 @@ async function displayWarnings(phase) {
 
     document.querySelectorAll('.warning-message').forEach(span => span.textContent = '');
 
-    const hasCommitted = await votingContract.methods.hasUserCommitted().call({ from: userAccount });
+    const hasCommitted = await votingContract.methods.hasUserVoted().call({ from: userAccount });
     const isExcluded = await votingContract.methods.ifExcluded().call({ from: userAccount });
 
     // Participant Warnings

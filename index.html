@@ -6,6 +6,7 @@
     <title>Commit-Reveal Voting DApp</title>
     <script src="config.js"></script>
     <script src="web3.min.js"></script>
+    <script src="pinata.js"></script>
     <script src="metamask_helpers.js" defer></script>
     <script src="app.js" defer></script>
     <script src="event_handlers.js" defer></script> 
@@ -89,7 +90,7 @@
                     <div id="admin-reveal-tally">
                         <h4>Tally Votes</h4>
                         <p class="warning-message">WARNING: This action should be performed once all secrets are collected off-chain.</p>
-                        <button id="batchRevealBtn" onclick="handleReveal()">Tally & Reveal All Votes</button>
+                        <button id="batchRevealBtn" onclick="handleTallySubmission()">Tally & Reveal All Votes</button>
                         <p><strong>Tally Status:</strong> Results are final after this action.</p>
                     </div>
 

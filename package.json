@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "dotenv": "^17.2.3",
+    "fs": "^0.0.1-security",
+    "pinata": "^1.10.1"
+  }
+}
