@@ -151,8 +151,6 @@ async function getCIDsFromPastEvents() {
             toBlock: 'latest'
         });
 
-        console.log(events);
-
         const votedManifest = new Map();
 
         // 2. Process events to build a manifest of unique votes
@@ -192,7 +190,6 @@ async function handleTallySubmission() {
     
     // 1. RETRIEVE ALL CIDs from the blockchain event logs
     const voterCIDs = await getCIDsFromPastEvents();
-    console.log("Retrieved voter CIDs:", voterCIDs);
 
     // 2. TALLY OFF-CHAIN VOTES (Automated using Pinata retrieval)
     const options = await votingContract.methods.getOptions().call();
@@ -205,7 +202,6 @@ async function handleTallySubmission() {
         await retrieveVoteFromIPFS(cid).then(voteDocument =>{
             const index = voteDocument.optionIndex;
             finalCounts[index] += 1;
-            console.log(`Vote for option index ${index} counted from CID ${cid}.`);
         });
     }
 
@@ -216,7 +212,6 @@ async function handleTallySubmission() {
     });
     finalResultSummary += "========================\n\n";
 
-    console.log(tallyLog);
     const confirmation = confirm(`${tallyLog}${finalResultSummary}\nConfirm submission of these calculated results to the blockchain?`);
 
     if (!confirmation) return;
