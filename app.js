@@ -1,12 +1,13 @@
-// app.js
-
 // Contract details 
-const contractAddress = '0x58ee4da790e03a49AF9F088Aa89b46Ac2f8a0E8A';
-const contractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"}],"name":"CommenceSetup","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":false,"internalType":"string","name":"_topic","type":"string"},{"indexed":false,"internalType":"string[]","name":"_options","type":"string[]"}],"name":"SessionStarted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"_voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"_optionIndex","type":"uint256"}],"name":"VoteCasted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"voter","type":"address"}],"name":"VoterExcluded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"},{"indexed":true,"internalType":"address","name":"voter","type":"address"}],"name":"VoterReinstated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"sessionId","type":"uint256"}],"name":"VotingEnded","type":"event"},{"inputs":[{"internalType":"uint256","name":"_optionIndex","type":"uint256"}],"name":"castVote","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"coordinator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"currentSessionId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"endVoting","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"excludeVoter","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getExcludedVoters","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOptions","outputs":[{"internalType":"string[]","name":"","type":"string[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getPhase","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getResults","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTopic","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"hasUserVoted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ifExcluded","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"reinstateVoter","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_topic","type":"string"},{"internalType":"string[]","name":"_options","type":"string[]"}],"name":"startSession","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"startSetup","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"viewMyVote","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"voteStatus","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}];
-let votingContract;
 let userAccount;
 let userRole; 
 let web3; 
+
+// Global object to store the local vote data (acts as cache for localStorage).
+let userCommitmentData = {
+    optionIndex: null, 
+    salt: null         
+};
 
 // DOM elements
 const userAddressSpan = document.getElementById('userAddress');
@@ -19,14 +20,14 @@ const currentStatusSpan = document.getElementById('currentStatus');
 async function connectWallet() {
     if (window.ethereum) {
         try {
-            // Get user account
+            // 1. Get user account
             userAccount = await get_current_eth_address();
 
-            // Initialize web3 and contract instance
+            // 2. Initialize web3 and contract instance using the config file
             web3 = new Web3(window.ethereum);
-            votingContract = new web3.eth.Contract(contractABI, contractAddress);
+            votingContract = new web3.eth.Contract(config.CONTRACT_ABI, config.CONTRACT_ADDRESS);
 
-            // Update UI with user info and contract status
+            // 3. Update UI
             updateUI();
         } catch (error) {
             console.error("User denied account access or another error occurred:", error);
@@ -39,7 +40,6 @@ async function connectWallet() {
 
 // Update UI with user info and contract status
 async function updateUI() {
-    // If user is not connected, show default messages
     if (!userAccount) {
         userAddressSpan.textContent = "Not connected";
         userRoleSpan.textContent = "N/A";
@@ -49,44 +49,30 @@ async function updateUI() {
         return;
     }
 
-    // Display user address
+    // Fetch and display user details
     userAddressSpan.textContent = userAccount;
-    
-    // Set network name
     let networkName;
-    try {
-        networkName = await get_current_network();
-    } catch (error) {
-        console.error("Error fetching network name:", error);
-        alert("Failed to fetch network data. Please ensure you're connected to the correct network.");
-        return;
+    try { 
+        networkName = await get_current_network(); 
+    } catch (error) { 
+        console.error("Error fetching network name:", error); return; 
     }
-
     networkNameSpan.textContent = networkName;
 
-    // Set user balance
     let userBalance;
-    try {
-        userBalance = await get_user_balance(userAccount);
-        userBalanceSpan.textContent = `${userBalance} ETH`;
-    } catch (error) {
-        console.error("Error fetching user balance:", error);
-        userBalanceSpan.textContent = "Error fetching balance";
+    try { 
+        userBalance = await get_user_balance(userAccount); userBalanceSpan.textContent = `${userBalance} ETH`; 
+    } catch (error) { 
+        userBalanceSpan.textContent = "Error fetching balance"; 
     }
 
-    // Get coordinator address
     let coordinatorAddress; 
-
-    // Fetch coordinator address from contract
-    try {
-        coordinatorAddress = await votingContract.methods.coordinator().call();
-    } catch (error) {
-        console.error("Error fetching coordinator address:", error);
-        alert("Failed to fetch contract data. Please ensure you're connected to the correct network.");
-        return;
+    try { 
+        coordinatorAddress = await votingContract.methods.coordinator().call(); 
+    } catch (error) { 
+        console.error("Error fetching coordinator address:", error); return; 
     }
 
-    // Determine user role
     if (userAccount.toLowerCase() === coordinatorAddress.toLowerCase()) {
         userRoleSpan.textContent = "Coordinator";
         userRole = "Coordinator";
@@ -95,37 +81,33 @@ async function updateUI() {
         userRole = "Participant";
     }
 
-    // Get phase
     let phase;
- 
-    // Fetch current phase from contract
     try {
         phase = await votingContract.methods.getPhase().call();
-        currentStatusSpan.textContent = phase;
-
     } catch (error) {
         console.error("Error fetching contract phase:", error);
         return;
     }
+    
+    if (!phase) phase = 'Setup';
     currentStatusSpan.textContent = phase;
 
-    // Trigger display logic based on role and phase
     loadContractData(phase);
     displayWarnings(phase);
 }
 
-// Function to log events from transaction receipt
+// Function to load all necessary data and update UI panels
 async function loadContractData(phase) {
 
-    // Get current session ID and exclusion status
     const sessionId = await votingContract.methods.currentSessionId().call();
-
-    // Load topic and options
     const topic = await votingContract.methods.getTopic().call();
     const options = await votingContract.methods.getOptions().call();
+    
+    // Set universal header data
+    document.getElementById('sessionIdDisplay').textContent = sessionId;
     document.getElementById('CurrentTopic').textContent = topic;
 
-    // Populate options list for participants
+    // Populate options list (used by Participant for selection, Admin for result display)
     const optionsContainer = document.getElementById('options-container');
     optionsContainer.innerHTML = '';
     options.forEach((option, index) => {
@@ -134,26 +116,36 @@ async function loadContractData(phase) {
         optionsContainer.appendChild(label);
     });
 
-    // Load admin-specific data
-    if (userRole === 'Coordinator') {
+    // --- UI Visibility Toggles ---
+    const isCoordinator = userRole === 'Coordinator';
 
-        // Display current session ID
-        document.getElementById('sessionIdDisplay').textContent = sessionId;
+    // Show/Hide main panels
+    document.getElementById('admin-panel').style.display = isCoordinator ? 'block' : 'none';
+    document.getElementById('participant-panel').style.display = isCoordinator ? 'none' : 'block';
+    
+    // Admin Phase Controls Visibility
+    document.getElementById('setup-phase').style.display = isCoordinator && phase === 'Setup' ? 'block' : 'none';
+    document.getElementById('voting-phase').style.display = isCoordinator && phase === 'Voting' ? 'block' : 'none';
+    document.getElementById('reveal-phase').style.display = isCoordinator && phase === 'Reveal' ? 'block' : 'none';
 
-        // Load and display excluded voters list
-        let excludedVoters;
-        try {
-            excludedVoters = await votingContract.methods.getExcludedVoters().call({ from: userAccount });
-        } catch (error) {
-            console.error("Error fetching excluded voters:", error);
-            return;
-        }
+    // Participant Phase Controls Visibility
+    document.getElementById('participant-setup-message').style.display = !isCoordinator && phase === 'Setup' ? 'block' : 'none';
+    const votingInterface = document.getElementById('voting-interface');
+    votingInterface.style.display = !isCoordinator && (phase === 'Voting' || phase === 'Reveal') ? 'block' : 'none';
+    
+    // Show/Hide Participant sub-panels within the main interface
+    document.getElementById('options-selection').style.display = !isCoordinator && phase === 'Voting' ? 'block' : 'none';
+    document.getElementById('participant-results-view').style.display = !isCoordinator && phase === 'Reveal' ? 'block' : 'none';
+    
+    // --- Phase-specific Data Loading ---
 
-        // Update excluded voters list in UI
+    if (isCoordinator) {
+        // Load Admin Excluded Voters List
+        let excludedVoters = await votingContract.methods.getExcludedVoters().call({ from: userAccount });
         const excludedListElement = document.getElementById('excludedVotersList');
         excludedListElement.innerHTML = '';
         if (excludedVoters.length > 0) {
-            excludedVoters.forEach(voter => {
+             excludedVoters.forEach(voter => {
                 const li = document.createElement('li');
                 li.textContent = voter;
                 excludedListElement.appendChild(li);
@@ -161,119 +153,99 @@ async function loadContractData(phase) {
         } else {
             excludedListElement.textContent = "No voters are currently excluded.";
         }
-        // Load participant-specific data
-    } else {
-        const excludedListElement = document.getElementById('excludedVotersList');
-        excludedListElement.textContent = "Only admin can view this.";
-    }
-    
-    // Load phase-specific data for participants
-    // Display voting options and status during Voting phase
-    if (phase === 'Voting') {
+        document.getElementById('voterStatusResult').style.display = 'block';
+        document.getElementById('voterStatusResult').textContent = ''; // Clear result area
+        
+    } else { // Participant View
+        document.getElementById('voterStatusResult').style.display = 'none';
+        document.getElementById('participantVotingTopic').textContent = `Voting Topic: ${topic}`;
 
-        // Update results display to reflect ongoing voting
-        document.getElementById('participantVotingStatus').textContent = "Please select an option and submit your vote.";
-        document.getElementById('winner').textContent = "Results are not yet available. Voting is currently in progress.";
-    
-    // Display results and winner during Reveal phase
-    } else if (phase === 'Reveal') {
-        // Fetch and display voting results
-        const results = await votingContract.methods.getResults().call();
-        
-        // Display results
-        const resultsList = document.getElementById('results-list');
-        resultsList.innerHTML = '';
-        
-        let maxVotes = 0;
-        let winners = [];
-        
-        // Populate results list and determine winner(s)
-        options.forEach((option, index) => {
-            const voteCount = results[index];
-            if (voteCount > maxVotes) {
-                maxVotes = voteCount;
-                winners = [option];
-            } else if (voteCount === maxVotes) {
-                winners.push(option);
-            }
-            const li = document.createElement('li');
-            li.textContent = `${option}: ${voteCount} votes`;
-            resultsList.appendChild(li);
-        });
-        
-        // Display winner or tie information
-        if (maxVotes === 0) {
-            document.getElementById('winner').textContent = "No winner, no votes were cast.";
-        } else if (winners.length === 1) {
-            document.getElementById('winner').textContent = `The winner is: ${winners[0]}`;
-        } else {
-            document.getElementById('winner').textContent = `It's a tie between: ${winners.join(" and ")}`;
+        if (phase === 'Setup') {
+            document.getElementById('participantSetupStatus').textContent = `Setup is in progress for Session ${sessionId}. Please wait for the Coordinator to start the Voting phase.`;
         }
+    } 
+    
+    // Universal Results Loading (Only relevant in Reveal)
+    if (phase === 'Reveal') {
+        const results = await votingContract.methods.getResults().call();
+        const tallyComplete = await votingContract.methods.getTallyComplete().call(); 
+        
+        // Update Admin Results View
+        const resultsListAdmin = document.getElementById('results-list');
+        // Update Participant Results View
+        const resultsListParticipant = document.getElementById('participantResultsList');
+        
+        resultsListAdmin.innerHTML = '';
+        resultsListParticipant.innerHTML = '';
 
-        // Update participant voting status
-        document.getElementById('participantVotingStatus').textContent = "Voting has ended. Here are the results.";
+        if (!tallyComplete) {
+            const pendingText = "Tally Pending: The coordinator must finalize the results.";
 
-    } else if (phase === 'Setup') {
-        // Clear voting data and display a message indicating waiting for a session.
-        document.getElementById('participantVotingStatus').textContent = "A new session is being set up. Please wait for the coordinator to start voting.";
-        document.getElementById('winner').textContent = "Results are not available during the Setup phase. Waiting for a new voting session to begin.";
+            // Show the action button ONLY to the Coordinator when pending
+            batchRevealBtn.disabled = false;
+            
+            // Populate list with initial zero counts
+            options.forEach((option) => {
+                const li = document.createElement('li');
+                li.textContent = `${option}: 0 votes`;
+                resultsListAdmin.appendChild(li);
+                resultsListParticipant.appendChild(li.cloneNode(true));
+            });
+
+            document.getElementById('winner').textContent = pendingText;
+            document.getElementById('participantWinner').textContent = pendingText;
+
+        } else {
+            let maxVotes = 0;
+            let winners = [];
+
+            batchRevealBtn.disabled = true;
+            
+            options.forEach((option, index) => {
+                const voteCount = results[index];
+                if (voteCount > maxVotes) {
+                    maxVotes = voteCount;
+                    winners = [option];
+                } else if (voteCount === maxVotes) {
+                    winners.push(option);
+                }
+                const li = document.createElement('li');
+                li.textContent = `${option}: ${voteCount} votes`;
+                resultsListAdmin.appendChild(li);
+                resultsListParticipant.appendChild(li.cloneNode(true)); // Clone for participant list
+            });
+            
+            const winnerText = 
+                maxVotes === 0 ? "No winner, no votes were casted." : 
+                winners.length === 1 ? `The winner is: ${winners[0]}` : 
+                `It's a tie between: ${winners.join(" and ")}`;
+
+            document.getElementById('winner').textContent = winnerText;
+            document.getElementById('participantWinner').textContent = winnerText;
+        }
     }
 }
 
-// Function to display dynamic warning messages without disabling buttons
+
+// Function to display dynamic warning messages
 async function displayWarnings(phase) {
 
-    // Clear previous warnings
     document.querySelectorAll('.warning-message').forEach(span => span.textContent = '');
-    document.getElementById('myVoteDisplay').textContent = '';
 
-    // Warnings for Coordinator
-    if (userRole === "Coordinator") {
-        if (phase === "Setup") {
-            document.getElementById('warning-startNewSessionBtn').textContent = "You can only start a new session after the current one ends.";
-            document.getElementById('warning-endVotingBtn').textContent = "You can only end voting during the Voting phase.";
-            document.getElementById('warning-submitVoteBtn').textContent = "You cannot vote as the coordinator.";
-        } else if (phase === "Voting") {
-            document.getElementById('warning-exclude-reinstateVoterBtn').textContent = "Voter exclusion is only allowed during the Setup phase.";
-            document.getElementById('warning-startSessionBtn').textContent = "A session is already active. Cannot start a new session now.";
-            document.getElementById('warning-startNewSessionBtn').textContent = "You can only start a new session after the current one ends.";
-            document.getElementById('warning-submitVoteBtn').textContent = "You cannot vote as the coordinator.";
-        } else {
-            document.getElementById('warning-exclude-reinstateVoterBtn').textContent = "Voter exclusion and reinstatement are only allowed during the Setup phase.";
-            document.getElementById('warning-startSessionBtn').textContent = "You can only start a new session once setup phase commences.";
-            document.getElementById('warning-endVotingBtn').textContent = "You can only end voting during the Voting phase.";
-            document.getElementById('warning-submitVoteBtn').textContent = "You cannot vote as the coordinator.";
-        }
-    }
+    const hasCommitted = await votingContract.methods.hasUserCommitted().call({ from: userAccount });
+    const isExcluded = await votingContract.methods.ifExcluded().call({ from: userAccount });
 
-    // Warnings for Participant
+    // Participant Warnings
     if (userRole === "Participant") {
-        document.getElementById('warning-exclude-reinstateVoterBtn').textContent = "Only admin can perform this action.";
-        document.getElementById('warning-startSessionBtn').textContent = "Only admin can perform this action.";
-        document.getElementById('warning-startNewSessionBtn').textContent = "Only admin can perform this action.";
-        document.getElementById('warning-checkVoterStatusBtn').textContent = "Only admin can perform this action.";
-        document.getElementById('warning-endVotingBtn').textContent = "Only admin can perform this action.";
-
-        // Check if user has voted or is excluded
-        const hasVoted = await votingContract.methods.voteStatus().call({ from: userAccount });
-        const isExcluded = await votingContract.methods.ifExcluded().call({ from: userAccount });        
-
-        // Display appropriate warnings based on phase and user status
-        if (phase === "Setup") {
-            document.getElementById('warning-submitVoteBtn').textContent = "Voting has not started yet.";
-        } else if (phase === "Reveal") {
-            document.getElementById('warning-submitVoteBtn').textContent = "Voting has ended.";
-            if (hasVoted) {
-                handleViewMyVote();
-            }
-        } else if (phase === "Voting") {
-            if (hasVoted) {
-                document.getElementById('warning-submitVoteBtn').textContent = "You have already voted in this session.";
-                handleViewMyVote();
-
-            } else if (isExcluded) {
-                document.getElementById('warning-submitVoteBtn').textContent = "You are not eligible to vote in this session.";
-            }
+        if (isExcluded) {
+            document.getElementById('submitVoteBtn').disabled = true;
+            document.getElementById('warning-submitVoteBtn').textContent = "You are not eligible to vote in this session.";
+            return;
+        } else if (hasCommitted) {
+            document.getElementById('submitVoteBtn').disabled = true;
+            document.getElementById('warning-submitVoteBtn').textContent = "You have already committed your vote.";
+        } else {
+            document.getElementById('submitVoteBtn').disabled = false;
         }
     }
 }

@@ -1,150 +1,127 @@
 // event_handlers.js
 
+// this function reconstruct the participants list from local storage
+function getCommittedParticipantsFromLocalStorage() {
+    const participants = [];
+    const baseKey = config.LOCAL_STORAGE_KEY + '_';
+    
+    // Iterate over all keys in the browser's local storage
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        
+        // Check if the key matches our specific pattern for saved secrets
+        if (key && key.startsWith(baseKey)) {
+            // The address is the part of the key after the base key
+            const address = key.substring(baseKey.length);
+            participants.push(`${address}`);
+        }
+    }
+    return participants;
+}
+
+// Fixes the overwriting flaw by scoping storage to the address
+function getUniqueStorageKey(address) {
+    return `${config.LOCAL_STORAGE_KEY}_${address.toLowerCase()}`;
+}
+
+// Retrieves the secret data using the current user's address
+function loadLocalCommitment(address) {
+    const uniqueKey = getUniqueStorageKey(address);
+    const data = localStorage.getItem(uniqueKey);
+    if (data) {
+        return JSON.parse(data);
+    }
+    return { optionIndex: null, salt: null };
+}
+
+// Saves the vote index and salt to local storage for persistence
+function saveLocalCommitment(optionIndex, salt, address) {
+    const uniqueKey = getUniqueStorageKey(address);
+    const data = JSON.stringify({ optionIndex, salt });
+    localStorage.setItem(uniqueKey, data);
+}
+
+// Clears the secret data after a successful reveal
+function clearLocalCommitment(address) {
+    const uniqueKey = getUniqueStorageKey(address);
+    localStorage.removeItem(uniqueKey);
+}
+
+// Helper function to generate a secure random salt (nonce)
+function generateSalt() {
+    const salt = web3.utils.randomHex(32).replace('0x', '');
+    return salt;
+}
+
+// Function to calculate the commitment hash: keccak256(index, salt)
+function calculateCommitment(optionIndex, salt) {
+    const abiEncoded = web3.eth.abi.encodeParameters(['uint256', 'string'], [optionIndex, salt]);
+    const commitment = web3.utils.keccak256(abiEncoded);
+    return commitment;
+}
+
+
 function logEventsFromReceipt(receipt) {
     if (!receipt || !receipt.events) {
-        console.log("No events emitted by this transaction.");
         return;
     }
 
-    // Log all events from the receipt
-    console.log("Events emitted by the transaction:", receipt.events);
-
-    
-
-    // Event listeners for session started
+    // Event handlers for state changes
     if (receipt.events.SessionStarted) {
-
-        // Extract event details
-        const event = receipt.events.SessionStarted;
-        const { sessionId, _topic, _options } = event.returnValues;
-
-        // Log and alert
-        console.log(`Event 'SessionStarted' emitted:
-        - sessionId: ${sessionId}
-        - topic: ${_topic}
-        - options: ${_options.join(', ')}`);
-        alert(`New voting session started on topic: ${_topic}' with options: ${_options.join(', ')}`);
-
-        // Update UI
+        alert(`New voting session started on topic: ${receipt.events.SessionStarted.returnValues._topic}'.`);
         updateUI();
     }
-
-    // Event listeners for CommenceSetup
     if (receipt.events.CommenceSetup) {
-
-        // Extract event details
-        const event = receipt.events.CommenceSetup;
-        const { sessionId } = event.returnValues;
-
-        // Log and alert
-        console.log(`Event 'CommenceSetup' emitted for sessionId: ${sessionId}`);
         alert("System is ready for a new voting session setup.");
-
-        // Update UI
         updateUI();
     }
 
-    // Event listeners for VoteCasted
-    if (receipt.events.VoteCasted) {
+    // Event: CommitmentCasted (Submission by Participant)
+    if (receipt.events.CommitmentCasted) {
+        const committerAddress = receipt.from;
+        
+        // SAVE SECRET LOCALLY AFTER SUCCESSFUL COMMIT ---
+        const secret = userCommitmentData; 
+        if (secret.optionIndex !== null && secret.salt !== null) {
+            saveLocalCommitment(secret.optionIndex, secret.salt, committerAddress);
+        }
 
-        // Extract event details
-        const event = receipt.events.VoteCasted;
-        const { sessionId, _voter, _optionIndex } = event.returnValues;
-
-        // Retrieve option text directly from the DOM
-        const optionsContainer = document.getElementById('options-container');
-        const votedOptionElement = optionsContainer.querySelector(`input[name="voteOption"][value="${_optionIndex}"]`);
-        const votedOptionText = votedOptionElement ? votedOptionElement.parentNode.textContent.trim() : `Option at index ${_optionIndex}`;
-
-        // Log and alert
-        console.log(`Event 'VoteCasted' emitted:
-        - sessionId: ${sessionId}
-        - voter: ${_voter}
-        - optionIndex: ${_optionIndex}`);
-        alert(`Vote casted successfully by ${_voter} for option: ${votedOptionText}`);
-
-        // Update UI
+        alert(`Commitment casted successfully by ${committerAddress}.`);
         updateUI();
     }
 
-    // Event listeners for VotingEnded
+    // Event: VotesRevealed (Emitted during Coordinator's batch reveal)
+    if (receipt.events.VotesRevealed) {
+        alert(`Votes has been tallied. Result will display soon`);
+        updateUI();
+    }
+
     if (receipt.events.VotingEnded) {
-
-        // Extract event details
-        const event = receipt.events.VotingEnded;
-        const { sessionId } = event.returnValues;
-
-        // Log and alert
-        console.log(`Event 'VotingEnded' emitted for sessionId: ${sessionId}`);
-        alert("Voting has ended for the current session. Results are being tallied.");
-
-        // Update UI
+        alert("Voting has ended. System moved to Reveal phase. Coordinator must tally results.");
         updateUI();
     }
 
-    // Event listeners for VoterExcluded and VoterReinstated
-    if (receipt.events.VoterExcluded) {
-
-        // Extract event details
-        const event = receipt.events.VoterExcluded;
-        const { sessionId, voter } = event.returnValues;
-
-        // Log and alert
-        console.log(`Event 'VoterExcluded' emitted:
-        - sessionId: ${sessionId}
-        - voter: ${voter}`);
-        alert(`Voter ${voter} has been excluded from session ${sessionId}.`);
-
-        // Update UI
+    if (receipt.events.VoterExcluded || receipt.events.VoterReinstated) {
         updateUI();
     }
-
-    if (receipt.events.VoterReinstated) {
-
-        // Extract event details
-        const event = receipt.events.VoterReinstated;
-        const { sessionId, voter } = event.returnValues;
-
-        // Log and alert
-        console.log(`Event 'VoterReinstated' emitted:
-        - sessionId: ${sessionId}
-        - voter: ${voter}`);
-        alert(`Voter ${voter} has been reinstated for session ${sessionId}.`);
-
-        // Update UI
-        updateUI();
-    }
-
 }
 
-// Admin functions logic
+// --- Coordinator Handlers ---
 async function handleStartSession() {
-
-    // Get topic and options from input fields
+    // ... (Validation logic omitted for brevity in response, assumed correct) ...
     const topic = document.getElementById('topicInput').value;
-    const optionsString = document.getElementById('optionsInput').value;
-    const optionsArray = optionsString.split(',').map(s => s.trim());
+    const optionsArray = document.getElementById('optionsInput').value.split(',').map(s => s.trim());
 
-    // Basic validation
     if (!topic || optionsArray.length < 2) {
         alert("Please enter a valid topic and at least two options.");
         return;
     }
-
-    // Call startSession method
+    
     try {
-
-        // Call the transaction to check for errors
         await votingContract.methods.startSession(topic, optionsArray).call({ from: userAccount });
-
-        // If the call succeeds, send the transaction
         const receipt = await votingContract.methods.startSession(topic, optionsArray).send({ from: userAccount });
-
-        // Notify user and log events
-        alert("Session started successfully!");
         logEventsFromReceipt(receipt);
     } catch (error) {
-        // Handle errors
         console.error("Failed to start session:", error);
         alert(error.message);
     }
@@ -152,16 +129,10 @@ async function handleStartSession() {
 
 async function handleEndVoting() {
     try {
-
-        // Call the transaction first
         await votingContract.methods.endVoting().call({ from: userAccount });
-
-        // If the call succeeds, send the transaction
         const receipt = await votingContract.methods.endVoting().send({ from: userAccount });
         logEventsFromReceipt(receipt);
     } catch (error) {
-
-        // Handle errors
         console.error("Failed to end voting:", error);
         alert(error.message);
     }
@@ -169,146 +140,169 @@ async function handleEndVoting() {
 
 async function handleStartNewSession() {
     try {
-
-        // Call the transaction first
         await votingContract.methods.startSetup().call({ from: userAccount });
-
-        // If the call succeeds, send the transaction
         const receipt = await votingContract.methods.startSetup().send({ from: userAccount });
         logEventsFromReceipt(receipt);
     } catch (error) {
-
-        // Handle errors
         console.error("Failed to start new session:", error);
         alert(error.message);
     }
 }
 
 async function handleExcludeVoter() {
-
-    // Get voter address from input field
     const voterAddress = document.getElementById('voterAddressInput').value;
     if (!web3.utils.isAddress(voterAddress)) {
         alert("Please enter a valid Ethereum address.");
         return;
     }
-
-    // Call excludeVoter method
     try {
-
-        // Call the transaction to check for errors
         await votingContract.methods.excludeVoter(voterAddress).call({ from: userAccount });
-
-        // If the call succeeds, send the transaction
         const receipt = await votingContract.methods.excludeVoter(voterAddress).send({ from: userAccount });
         logEventsFromReceipt(receipt);
     } catch (error) {
-
-        // Handle errors
         console.error("Failed to exclude voter:", error);
         alert(error.message);
     }
 }
 
 async function handleReinstateVoter() {
-
-    // Get voter address from input field
     const voterAddress = document.getElementById('voterAddressInput').value;
     if (!web3.utils.isAddress(voterAddress)) {
         alert("Please enter a valid Ethereum address.");
         return;
     }
-
-    // Call reinstateVoter method
     try {
-
-        // Call the transaction to check for errors
         await votingContract.methods.reinstateVoter(voterAddress).call({ from: userAccount });
-
-        // If the call succeeds, send the transaction
         const receipt = await votingContract.methods.reinstateVoter(voterAddress).send({ from: userAccount });
         logEventsFromReceipt(receipt);
     } catch (error) {
-
-        // Handle errors
         console.error("Failed to reinstate voter:", error);
         alert(error.message);
     }
 }
 
-// Participant functions logic
-async function handleSubmitVote() {
-
-    // Get selected option
-    const selectedOption = document.querySelector('input[name="voteOption"]:checked');
-    if (!selectedOption) {
-        alert("Please select an option to vote.");
-        return;
-    }
-
-    // Call castVote method
-    const optionIndex = selectedOption.value;
-    try {
-
-        // Call the transaction to check for errors
-        await votingContract.methods.castVote(optionIndex).call({ from: userAccount });
-
-        // If the call succeeds, send the transaction
-        const receipt = await votingContract.methods.castVote(optionIndex).send({ from: userAccount });
-        logEventsFromReceipt(receipt);
-    } catch (error) {
-
-        // Handle errors
-        console.error("Failed to submit vote:", error);
-        alert(error.message);
-    }
-}
-
-// Admin function to check if a specific user has voted
+// Admin function to check a specific user's status
 async function handleCheckVoterStatus() {
-
-    // Get voter address from input field
-    const voterAddress = document.getElementById('voterCheckAddress').value;
+    const voterAddress = document.getElementById('voterCheckAddressVoting').value;
     const voterStatusResult = document.getElementById('voterStatusResult');
     
-    // Address validation
     if (!web3.utils.isAddress(voterAddress)) {
         alert("Please enter a valid Ethereum address.");
         return;
     }
     
-    // Call hasUserVoted method
     try {
-
-        //  Call the method to check if the user has voted
-        const hasVoted = await votingContract.methods.hasUserVoted(voterAddress).call({ from: userAccount });
-        voterStatusResult.textContent = `Voter ${voterAddress} has voted: ${hasVoted}`;
+        const status = await votingContract.methods.hasUserSubmitted(voterAddress).call({ from: userAccount });
+        voterStatusResult.textContent = `Voter ${voterAddress} status: ${status}`;
+        voterStatusResult.style.display = 'block';
     } catch (error) {
-
-        // Handle errors
         console.error("Failed to check voter status:", error);
         alert(error.message);
     }
 }
 
-// Participant function to view their casted vote
-async function handleViewMyVote() {
+// --- Coordinator Batch Reveal Logic (READS FROM LOCAL STORAGE) ---
+async function handleReveal() {
+    if (userRole !== 'Coordinator') {
+        alert("Access denied. Only the Coordinator can initiate the batch reveal.");
+        return;
+    }
 
-    const myVoteDisplay = document.getElementById('myVoteDisplay');
+    const currentPhase = await votingContract.methods.getPhase().call();
+    if (currentPhase !== 'Reveal') {
+        alert("Cannot reveal votes. System must be in the Reveal phase.");
+        return;
+    }
+
+    const committedParticipants = getCommittedParticipantsFromLocalStorage();
+
+    const voters = [];
+    const optionIndexes = [];
+    const salts = [];
     
-    // Only fetch if not coordinator
-    if (userRole === 'Participant') {
-        try {
-            // Call the viewMyVote method
-            const myVote = await votingContract.methods.viewMyVote().call({ from: userAccount });
-            
-            // Check if user has voted (myVote is the string representation of the voted option, or "Not Voted")
-            myVoteDisplay.textContent = `Your Voted Option: ${myVote}`;
-
-        } catch (error) {
-            // Error handling for viewMyVote (e.g., if contract view call fails for other reasons)
-            console.error("Failed to fetch user's vote:", error);
-            alert(error.message);
+    // ITERATE AND READ LOCAL STORAGE FOR EACH COMMITTED PARTICIPANT ---
+    for (const address of committedParticipants) {
+        const secret = loadLocalCommitment(address); 
+        
+        // Only include participants for whom we have a secret saved locally
+        if (secret.optionIndex !== null && secret.salt !== null) {
+            voters.push(address);
+            optionIndexes.push(secret.optionIndex);
+            salts.push(secret.salt);
+        } else {
+            console.warn(`Participant ${address.slice(0, 6)}... committed but their secret is missing from local storage.`);
         }
-    } 
+
+        // Clear local storage after preparing for reveal
+        clearLocalCommitment(address);
+    }
+
+    try {
+        // 1. Call to check for transaction errors
+        await votingContract.methods.revealVotes(voters, optionIndexes, salts).call({ from: userAccount });
+        
+        // 2. Execute the single, large transaction
+        const receipt = await votingContract.methods.revealVotes(voters, optionIndexes, salts).send({ from: userAccount });
+
+        alert(`Batch reveal successful for ${voters.length} entries! Results are now final.`);
+        logEventsFromReceipt(receipt);
+    } catch (error) {
+        console.error("Failed to perform batch reveal:", error);
+        alert(error.message || "Failed to reveal votes. Check console for details.");
+    }
+}
+
+
+// --- Participant Handler (CRITICAL CHANGE: Submits Commitment) ---
+async function handleCommitmentSubmission() {
+    const currentPhase = await votingContract.methods.getPhase().call();
+    const hasCommitted = await votingContract.methods.hasUserCommitted().call({ from: userAccount });
+    const isExcluded = await votingContract.methods.ifExcluded().call({ from: userAccount });
+
+    // 1. PHASE CHECK: Must be in Voting Phase
+    if (currentPhase !== 'Voting') {
+        alert("Cannot commit. Voting phase is currently inactive.");
+        return;
+    }
+
+    // 2. ELIGIBILITY CHECKS (Must be checked client-side for UX, contract enforces it too)
+    if (isExcluded) {
+        alert("You are not eligible to vote in this session.");
+        return;
+    }
+    if (hasCommitted) {
+        alert("You have already cast a commitment in this session.");
+        return;
+    }
+
+    // 3. GET DATA & CALCULATE COMMITMENT
+    const selectedOption = document.querySelector('input[name="voteOption"]:checked');
+    if (!selectedOption) {
+        alert("Please select an option to vote.");
+        return;
+    }
+    
+    const optionIndex = parseInt(selectedOption.value);
+    const salt = generateSalt();
+    const commitment = calculateCommitment(optionIndex, salt);
+
+    // 4. SAVE SECRET TO CACHE (Used by logEventsFromReceipt on success)
+    userCommitmentData.optionIndex = optionIndex;
+    userCommitmentData.salt = salt;
+
+    try {
+        // 5. Submit the hash commitment
+        await votingContract.methods.castCommitment(commitment).call({ from: userAccount });
+
+        const receipt = await votingContract.methods.castCommitment(commitment).send({ from: userAccount });
+        
+        logEventsFromReceipt(receipt);
+
+    } catch (error) {
+        console.error("Failed to submit commitment:", error);
+        alert(error.message);
+        // Clear cache on failure to allow retry
+        userCommitmentData.optionIndex = null;
+        userCommitmentData.salt = null;
+    }
 }

@@ -2,7 +2,6 @@
 async function get_current_eth_address(){
     if (typeof window.ethereum !== 'undefined') {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-        console.log(accounts);
         return accounts[0]
     }
     else{
@@ -18,7 +17,6 @@ async function get_user_balance(eth_address){
             method: "eth_getBalance",
             params: [eth_address],
         })
-        console.log(balance);
         return (parseInt(balance, 16) / Math.pow(10,18)).toFixed(10);
     }
     else{
@@ -35,7 +33,6 @@ async function get_current_network(){
         params: []
     });
     var current_network = parseInt(eth_network, 16);
-    // console.log(typeof(current_network));
     var result;
     switch (current_network) {
                     case 1:

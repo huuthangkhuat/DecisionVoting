@@ -3,89 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Decision Voting Platform</title>
+    <title>Commit-Reveal Voting DApp</title>
+    <script src="config.js"></script>
     <script src="web3.min.js"></script>
     <script src="metamask_helpers.js" defer></script>
     <script src="app.js" defer></script>
     <script src="event_handlers.js" defer></script> 
     <style>
-        .warning-message {
-            color: red;
-            margin-left: 10px;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .warning-message { color: red; font-weight: bold; margin-top: 5px; }
+        .success-message { color: green; font-weight: bold; margin-top: 5px; }
+        #status-section p { margin: 5px 0; }
+        h2, h3, h4 { border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 20px; }
+        .control-group { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px; }
+        .result-item { padding: 8px 0; border-bottom: 1px dashed #ddd; }
+        /* Highlighting for better visual separation */
+        #admin-panel { border: 2px solid #007bff; padding: 15px; }
+        #participant-panel { border: 2px solid #28a745; padding: 15px; }
     </style>
 </head>
 <body>
     <header>
-        <h1>Decision Voting Platform</h1>
+        <h1>Secure Blockchain Voting Platform (Commit-Reveal)</h1>
     </header>
     <main>
         <section id="status-section">
             <button id="connectWalletBtn" onclick="connectWallet()">Connect Wallet</button>
-            <p><strong>Wallet Address:</strong> <span id="userAddress"></span></p>
-            <p><strong>Network:</strong> <span id="networkName"></span></p>
-            <p><strong>Balance:</strong> <span id="userBalance"></span></p>
-            <p><strong>User Role:</strong> <span id="userRole"></span></p>
+            <p><strong>Wallet Address:</strong> <span id="userAddress">Not connected</span></p>
+            <p><strong>User Role:</strong> <span id="userRole">N/A</span></p>
+            <p><strong>Network:</strong> <span id="networkName">N/A</span> | <strong>Balance:</strong> <span id="userBalance">N/A</span></p>
         </section>
 
         <hr>
 
         <section id="app-container">
-            <h2>Application Status: <span id="currentStatus">Loading...</span></h2>
+            <h2>Current Phase: <span id="currentStatus" style="color: blue;">Loading...</span></h2>
+            <p><strong>Session ID:</strong> <span id="sessionIdDisplay">0</span> | <strong>Topic:</strong> <span id="CurrentTopic">N/A</span></p>
+            
+            <div id="admin-panel" style="display:none;">
+                <h2>Coordinator Controls</h2>
 
-            <div id="admin-panel" style="display:block;">
-                <p><strong>Current Session ID:</strong> <span id="sessionIdDisplay"></span></p>
-                <p><strong>Topic:</strong> <span id="CurrentTopic"></span></p>
-                <div id="admin-voter-controls" style="display:block;">
-                    <h3>Voter Management</h3>
-                    <p><strong>Current Excluded Voters:</strong></p>
-                    <ul id="excludedVotersList"></ul>
-                    <input type="text" id="voterAddressInput" placeholder="Enter voter address" size="40">
-                    <button id="excludeVoterBtn" onclick="handleExcludeVoter()">Exclude Voter</button>
-                    <button id="reinstateVoterBtn" onclick="handleReinstateVoter()">Reinstate Voter</button>
-                    <span id="warning-exclude-reinstateVoterBtn" class="warning-message"></span>
+                <div id="setup-phase" class="control-group" style="display:none;">
+                    <h3>1. Setup: Voter & Election Definition</h3>
+                    
+                    <div id="admin-voter-controls">
+                        <h4>Voter Eligibility Management</h4>
+                        <p><strong>Current Excluded Voters:</strong></p>
+                        <ul id="excludedVotersList"></ul>
+                        <input type="text" id="voterAddressInput" placeholder="Voter Address (0x...)" size="40">
+                        <button id="excludeVoterBtn" onclick="handleExcludeVoter()">Exclude Voter</button>
+                        <button id="reinstateVoterBtn" onclick="handleReinstateVoter()">Reinstate Voter</button>
+                        <span id="warning-exclude-reinstateVoterBtn" class="warning-message"></span>
+                    </div>
+
+                    <div id="setup-controls">
+                        <h4>Define Topic & Options</h4>
+                        <input type="text" id="topicInput" placeholder="Enter voting topic">
+                        <input type="text" id="optionsInput" placeholder="Enter options, comma-separated (e.g., Cat, Dog)">
+                        <button id="startSessionBtn" onclick="handleStartSession()">Start Session (Move to Voting)</button>
+                        <span id="warning-startSessionBtn" class="warning-message"></span>
+                    </div>
                 </div>
-                <div id="admin-voter-check" style="display:block;">
-                    <h3>Check Voter Status</h3>
-                    <input type="text" id="voterCheckAddress" placeholder="Enter voter address to check" size="40">
-                    <button id="checkVoterStatusBtn" onclick="handleCheckVoterStatus()">Check Status</button>
-                    <span id="warning-checkVoterStatusBtn" class="warning-message"></span>
-                    <p id="voterStatusResult"></p>
+
+                <div id="voting-phase" class="control-group" style="display:none;">
+                    <h3>2. Voting Phase: Monitor & Transition</h3>
+                    
+                    <div id="admin-voter-check-voting">
+                        <h4>Audit: Check Participant Status</h4>
+                        <input type="text" id="voterCheckAddressVoting" placeholder="Enter voter address (0x...)" size="40">
+                        <button id="checkVoterStatusBtnVoting" onclick="handleCheckVoterStatus()">Check Status</button>
+                        <span id="warning-checkVoterStatusBtnVoting" class="warning-message"></span>
+                        <p id="voterStatusResult" class="success-message" style="display:none;"></p>
+                    </div>
+
+                    <div id="end-voting-controls">
+                        <h4 style="margin-top: 15px;">End Commitment Period</h4>
+                        <button id="endVotingBtn" onclick="handleEndVoting()">End Voting (Move to Reveal)</button>
+                        <span id ="warning-endVotingBtn" class="warning-message"></span>
+                    </div>
                 </div>
-                <div id="setup-phase" style="display:block;">
-                    <h3>Setup Phase</h3>
-                    <input type="text" id="topicInput" placeholder="Enter voting topic">
-                    <input type="text" id="optionsInput" placeholder="Enter options, comma-separated">
-                    <button id="startSessionBtn" onclick="handleStartSession()">Start Session</button>
-                    <span id="warning-startSessionBtn" class="warning-message"></span>
-                </div>
-                <div id="voting-phase" style="display:block;">
-                    <h3>Voting Phase</h3>
-                    <button id="endVotingBtn" onclick="handleEndVoting()">End Voting</button>
-                    <span id ="warning-endVotingBtn" class="warning-message"></span>
-                </div>
-                <div id="reveal-phase" style="display:block;">
-                    <h3>Reveal Phase</h3>
-                    <h4 id="results-display" style="display:block;">
-                        <h4>Result</h4>
-                        <p><span id="winner"></span></p>
+
+                <div id="reveal-phase" class="control-group" style="display:none;">
+                    <h3>3. Reveal Phase: Tally & Finalize</h3>
+                    
+                    <div id="admin-reveal-tally">
+                        <h4>Tally Votes</h4>
+                        <p class="warning-message">WARNING: This action should be performed once all secrets are collected off-chain.</p>
+                        <button id="batchRevealBtn" onclick="handleReveal()">Tally & Reveal All Votes</button>
+                        <p><strong>Tally Status:</strong> Results are final after this action.</p>
+                    </div>
+
+                    <div id="admin-results">
+                        <h4>Final Results (Coordinator View)</h4>
+                        <p>Winner: <span id="winner" class="success-message">N/A</span></p>
                         <ul id="results-list"></ul>
-                    </h4>
-                    <button id="startNewSessionBtn" onclick="handleStartNewSession()">Start Setup Phase</button>
-                    <span id="warning-startNewSessionBtn" class="warning-message"></span>
+                    </div>
+
+                    <div id="admin-start-new">
+                        <h4 style="margin-top: 15px;">Start New Election</h4>
+                        <button id="startNewSessionBtn" onclick="handleStartNewSession()">Start Setup Phase</button>
+                        <span id="warning-startNewSessionBtn" class="warning-message"></span>
+                    </div>
                 </div>
             </div>
 
-            <div id="participant-panel" style="display:block;">
-                <h3>Participant Voting</h3>
-                <p id="myVoteDisplay"></p>
-            </div>
-            <div id="voting-interface" style="display:block;">
-                <p id="participantVotingStatus"></p>
-                <h4 id="participantVotingTopic"></h4>
-                <div id="options-container"></div>
-                <button id="submitVoteBtn" onclick="handleSubmitVote()">Submit Vote</button>
-                <span id="warning-submitVoteBtn" class="warning-message"></span>
+            <div id="participant-panel" style="display:none;">
+                <h2>Participant View</h2>
+                
+                <div id="participant-setup-message" class="control-group" style="display:none;">
+                    <h3>Election Setup In Progress</h3>
+                    <p id="participantSetupStatus" class="success-message"></p>
+                </div>
+                
+                <div id="voting-interface" class="control-group" style="display:none;">
+                    
+                    <p id="participantVotingStatus" class="success-message"></p>
+                    
+                    <div id="options-selection">
+                        <h4 id="participantVotingTopic"></h4>
+                        <div id="options-container"></div>
+                        
+                        <div id="secret-file-controls">
+                            <button disabled id="submitVoteBtn" onclick="handleCommitmentSubmission()" >Submit Commitment</button>
+                            <span id="warning-submitVoteBtn" class="warning-message"></span>
+                        </div>
+                        
+                        <p id="myVoteDisplay"></p>
+                    </div>
+
+                    <div id="participant-results-view">
+                        <h4>Final Election Results</h4>
+                        <p>Winner: <span id="participantWinner" class="success-message">N/A</span></p>
+                        <ul id="participantResultsList"></ul>
+                    </div>
+                </div>
             </div>
             
         </section>
