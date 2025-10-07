@@ -199,10 +199,14 @@ async function handleTallySubmission() {
 
     for (const { cid } of voterCIDs) {
         // Fetch the JSON vote document from IPFS via the Pinata gateway
-        await retrieveVoteFromIPFS(cid).then(voteDocument =>{
+        try {
+            const voteDocument = await retrieveVoteFromIPFS(cid);
             const index = voteDocument.optionIndex;
             finalCounts[index] += 1;
-        });
+        } catch (error) {
+            console.error(`Failed to retrieve or process vote document for CID ${cid}:`, error);
+            continue;
+        }
     }
 
     // 3. DISPLAY & CONFIRM FINAL TALLY
