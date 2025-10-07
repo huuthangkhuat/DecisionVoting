@@ -12,7 +12,7 @@ async function pinVoteToIPFS(userAddress, sessionId, optionIndex) {
         timestamp: new Date().toISOString()
       },
       pinataMetadata: {
-        name: "metadata.json"
+        name: `vote-${userAddress.toLowerCase()}-session-${sessionNumber}`,
       }
     })
 
