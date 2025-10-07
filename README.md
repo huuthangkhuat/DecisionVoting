@@ -1,57 +1,50 @@
-# DevBlockChain: Decision Voting Platform
+# Secure Blockchain Voting Platform (Commit-Reveal)
 
-This repository contains the front-end code for a **Decision Voting Platform**, a Decentralized Application (DApp) that interfaces with an Ethereum smart contract for managing voting sessions. It uses **web3.js** for blockchain interaction and **MetaMask** for wallet connectivity.
+This repository contains the full stack (Frontend + Node.js Proxy) for a **Decision Voting Platform**. This Decentralized Application (DApp) uses the **Commit-Reveal** voting model, interfacing with an Ethereum smart contract for session management and relying on a **Node.js/Pinata proxy** to handle off-chain vote data storage on IPFS.
 
----
-
-## 🧭 Overview
-
-The DApp allows a designated **Coordinator** to manage the lifecycle of a voting session—from setup to result revelation. **Participants** can connect their wallets, view the current voting topic and options, and cast a single vote during the active **Voting** phase. All interactions, role verification, and status updates are handled by communicating directly with the underlying smart contract.
+It uses **web3.js** for blockchain interaction and **MetaMask** for wallet connectivity.
 
 ---
 
-## 🎭 Roles
+## 🧭 Overview: Voting Phases
 
-The application defines two primary roles based on the smart contract's `coordinator` address:
+The platform operates through a strict **three-phase lifecycle** managed by the **Coordinator**:
 
-| Role | Description |
-| :--- | :--- |
-| **Coordinator** | The administrative user responsible for setting up and controlling the voting session lifecycle (e.g., starting setup, starting voting, ending voting). |
-| **Participant** | A regular user who is eligible to view the voting topic, options, and submit a single vote. |
+| Phase | Contract Status | Coordinator Action | Participant Action |
+| :--- | :--- | :--- | :--- |
+| **1. Setup** | `Setup` | Define topic/options, manage voter eligibility. | Waits for the voting session to start. |
+| **2. Voting** | `Voting` | Monitor votes; end the voting period. | Selects an option and **Submits Commitment** (uploads vote to IPFS and commits CID on-chain). |
+| **3. Reveal** | `Reveal` | **Tally & Finalize** votes (retrieves IPFS data, calculates results, and submits tally on-chain). | Views final results. |
 
 ---
 
-## 🛠️ Functionality
+## 🛠️ Functionality and IPFS Flow
 
-The application is structured into JavaScript files (`app.js`, `event_handlers.js`, `metamask_helpers.js`) and an HTML file (`index.html`).
+The application is structured into a Node.js backend (`server.js`) and client-side assets (`app.js`, `event_handlers.js`, `pinata.js`, etc.).
 
 ### Core Features
 
 | Feature | Description | File |
 | :--- | :--- | :--- |
+| **Backend Proxy (Pinata)** | A local Node.js server acts as a proxy for Pinata interactions: uploading vote JSON to IPFS, retrieving vote data from the Pinata Gateway, and unpinning old sessions. | `server.js`, `pinata.js` |
 | **Wallet Connection** | Connects to the Ethereum network via MetaMask to retrieve the user's address, network, and balance. | `metamask_helpers.js`, `app.js` |
-| **Role-Based UI** | Dynamically adjusts the interface and available actions based on whether the connected user is the Coordinator or a Participant. | `app.js` |
-| **Session Management** | Coordinator functions to start a new session setup, define a new voting topic and options, and end the current voting period. | `event_handlers.js` |
-| **Voter Management** | Coordinator functions to temporarily `exclude` or `reinstate` a Participant from the current session. | `event_handlers.js` |
-| **Voting** | Participants can cast a vote for one of the available options during the **Voting** phase. | `event_handlers.js` |
-| **Status Display** | Displays the current contract phase (**Setup**, **Voting**, or **Reveal**) and conditionally shows relevant data (e.g., excluded voters, current results). | `app.js` |
-| **Real-time Feedback**| Logs, alerts, and updates the UI based on events emitted by successful contract transactions. | `event_handlers.js` |
+| **Commitment Submission** | Participants upload vote data to IPFS via the proxy and submit the resulting **CID** to the smart contract via `castVote`. | `event_handlers.js`, `pinata.js` |
+| **Tally & Finalize** | The Coordinator fetches all CIDs, uses the Node.js proxy to resolve the vote data from IPFS, tallies the results locally, and submits the final count on-chain via `setFinalResults`. | `event_handlers.js` |
+| **Voter Management** | Coordinator functions to explicitly `excludeVoter` or `reinstateVoter` a Participant in the **Setup** phase. | `event_handlers.js` |
 
 ### Key Contract Interactions
 
-The application communicates with a smart contract (located at `0x20F6F589e184665d62922f3Be5fC4E6526e04331`):
+The application communicates with the smart contract deployed at address **`0x17E353abC7361A12FdC6c76162cDfA020cC4Fe67`**:
 
-| Action | Function | Role |
-| :--- | :--- | :--- |
-| Check coordinator | `coordinator()` | All |
-| Check current phase | `getPhase()` | All |
-| Start new session setup | `startSetup()` | Coordinator |
-| Start voting session | `startSession(topic, options[])` | Coordinator |
-| End voting | `endVoting()` | Coordinator |
-| Cast a vote | `castVote(optionIndex)` | Participant |
-| View my vote | `viewMyVote()` | Participant |
-| Exclude/Reinstate voter | `excludeVoter(address)`, `reinstateVoter(address)` | Coordinator |
-| View results | `getResults()` | All (in Reveal phase) |
+| Action | Function | Role | Notes |
+| :--- | :--- | :--- | :--- |
+| Check coordinator | `coordinator()` | All | Used for role-based UI. |
+| Check current phase | `getPhase()` | All | Returns one of the three phases. |
+| Start voting session | `startSession(topic, options[])` | Coordinator | Moves the phase from **Setup** to **Voting**. |
+| Cast a commitment | `castVote(cid)` | Participant | Commits an IPFS CID, not the direct vote option. |
+| End voting | `endVoting()` | Coordinator | Moves the phase from **Voting** to **Reveal**. |
+| Submit final results | `setFinalResults(counts[])` | Coordinator | Submits the off-chain tally in the **Reveal** phase. |
+| Start next session | `startSetup()` | Coordinator | Moves the phase from **Reveal** back to **Setup**. |
 
 ---
 
@@ -59,29 +52,59 @@ The application communicates with a smart contract (located at `0x20F6F589e18466
 
 ### Prerequisites
 
-1.  **MetaMask:** You must have the MetaMask browser extension installed and configured with an Ethereum account.
-2.  **Web3.js Dependency:** The project relies on the bundled `web3.min.js` file, which is included in the directory.
-3.  **Contract Deployment:** The DApp is hardcoded to interact with a contract at the address `0x20F6F589e184665d62922f3Be5fC4E6526e04331`. Ensure the corresponding contract has been deployed to your connected network.
+1.  **Node.js and npm:** Required to run the Pinata backend proxy.
+2.  **MetaMask:** Browser extension installed and configured with an Ethereum account.
+3.  **Contract Deployment:** The DApp is hardcoded to interact with a contract at the address **`0x17E353abC7361A12FdC6c76162cDfA020cC4Fe67`**.
+4.  **Pinata API Key:** A Pinata JSON Web Token (JWT) and Gateway URL are required for the backend proxy.
 
 ### Setup and Running
 
-1.  **Host Files:** Serve the HTML, CSS, and JavaScript files using a local web server (e.g., using VS Code Live Server or Python's `http.server`).
-2.  **Open in Browser:** Navigate to `index.html` via your local server address.
-3.  **Connect Wallet:** Click the **"Connect Wallet"** button and approve the connection in MetaMask. The UI will automatically update based on your account and the contract's current phase.
+#### 1. Configure and Start the Backend Proxy
+
+The DApp relies on a local Node.js proxy to interface with Pinata for IPFS pinning and retrieval.
+
+**A. Environment File (`.env`)**
+
+Create a file named `.env` in the root directory (where `server.js` is located) with your Pinata credentials:
+PINATA_JWT="<YOUR_PINATA_JWT_HERE>"
+GATEWAY_URL="<YOUR_PINATA_GATEWAY_URL_HERE>"
+PORT=3000
+
+**B. Install Dependencies and Run**
+
+In your terminal, navigate to the root directory, install dependencies, and start the server:
+
+```bash
+npm install 
+node server.js
+```
+
+The server should start on http://localhost:3000. Keep this window open.
+
+#### 2. Serve Frontend Files
+Serve the HTML, CSS, and JavaScript files using a local web server (e.g., using VS Code Live Server or Python's http.server).
+
+#### 3. Connect and Use
+**Open in Browser:** Navigate to index.html via your local server address.
+
+**Connect Wallet:** Click the "Connect Wallet" button and approve the connection in MetaMask.
 
 ### Usage Flow (Coordinator)
+**Phase 1:** Setup: Enter a topic and a comma-separated list of options. Optionally, use the Voter Eligibility Management controls to excludeVoter or reinstateVoter participants.
 
-1.  **Connect Wallet:** Ensure your connected address is the Coordinator.
-2.  **Setup Phase:** Enter a **topic** and a comma-separated list of **options** in the text fields.
-3.  **Start Session:** Click **"Start Session"**. Approve the transaction in MetaMask. This moves the contract to the **Voting** phase.
-4.  **(Optional) Voter Management:** In the Setup phase, use **"Exclude Voter"** or **"Reinstate Voter"** to manage participants.
-5.  **End Voting:** Once voting is complete, click **"End Voting"**. This moves the contract to the **Reveal** phase and displays the results.
-6.  **Start Next Setup:** Click **"Start Setup Phase"** to clear results and begin the setup for a new session.
+**Phase 2:** Voting: Click "Start Session" to move to the Voting phase. Wait for participants to submit their commitments.
+
+**Phase 3:** Reveal: Click "End Voting" to move to the Reveal phase. Then, click "Tally & Reveal All Votes" to trigger the automated IPFS retrieval, tally calculation, and final on-chain submission.
+
+**Start Next Session:** Click "Start Setup Phase" to reset the contract and begin a new Setup phase. (This step also attempts to run the backend's /unpin endpoint to clear old Pinata storage).
 
 ### Usage Flow (Participant)
+**Phase 1:** Setup: Wait for the Coordinator to move the session to the Voting phase.
 
-1.  **Connect Wallet:** Ensure your connected address is a Participant.
-2.  **Wait for Voting:** Wait for the Coordinator to start the **Voting** phase.
-3.  **Vote:** Select a radio button for your preferred option.
-4.  **Submit Vote:** Click **"Submit Vote"** and approve the transaction in MetaMask.
-5.  **View Vote:** If you have voted, your selection will be displayed. You cannot vote again in the current session.
+**Phase 2:** Voting (Commitment):
+
+Select your option using the radio buttons.
+
+Click "Submit Commitment". This action automatically uploads your vote details to IPFS via the proxy and commits the resulting CID to the contract.
+
+**Phase 3:** Reveal: Wait for the Coordinator to complete the Tally. Once done, the winner and final counts will be displayed.

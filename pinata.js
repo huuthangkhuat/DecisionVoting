@@ -1,33 +1,37 @@
 //pinata.js
 
-// Utulitify functions to save vote data as JSON to IPFS via Pinata
+const BACKEND_URL = "http://localhost:3000"; 
+
+// Utility functions to save vote data as JSON to IPFS via Pinata
 async function pinVoteToIPFS(userAddress, sessionId, optionIndex) {    
     const sessionNumber = parseInt(BigInt(sessionId));
     
-    const voteDocument = JSON.stringify({
-      pinataContent: {
+    // Data structure sent to the local backend proxy
+    const voteDocument = {
         voter: userAddress.toLowerCase(),
         session: sessionNumber,
         optionIndex: optionIndex,
         timestamp: new Date().toISOString()
-      },
-      pinataMetadata: {
-        name: `vote-${userAddress.toLowerCase()}-session-${sessionNumber}`,
-      }
-    })
+    };
 
     try {
-        const res = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+        const res = await fetch(`${BACKEND_URL}/pin_vote`, {
             method: "POST",
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${config.PINATA_JWT}`,
-            },
-            body: voteDocument,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(voteDocument),
         });
 
+        if (!res.ok) {
+            const errorBody = await res.json();
+            throw new Error(errorBody.details || errorBody.message || "Pinata proxy failed.");
+        }
+
         const resData = await res.json();
-        return resData.IpfsHash.toString();
+
+        const cid = resData.result.cid;
+        if (!cid) throw new Error("Backend did not return a valid CID.");
+
+        return cid;
     } catch (error) {
         console.error("Pinata upload failed:", error);
         throw new Error(`Failed to upload vote data to IPFS: ${error.message}`);
@@ -37,9 +41,18 @@ async function pinVoteToIPFS(userAddress, sessionId, optionIndex) {
 // Function to retrieve vote data from IPFS via Pinata gateway
 async function retrieveVoteFromIPFS(cid) {
     try {
-        const response = await fetch(`https://${config.GATEWAY_URL}/ipfs/${cid}`);
+        // Fetch YOUR LOCAL BACKEND, which then proxies to the Pinata Gateway
+        const response = await fetch(`${BACKEND_URL}/retrieve/${cid}`);
 
-        return response.json();
+        if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(errorBody.details || errorBody.message || "Pinata retrieval proxy failed.");
+        }
+        
+        const resData = await response.json();
+        const optionIndex = await resData.data.optionIndex;
+
+        return optionIndex;
     } catch (error) {
         console.error(`Failed to retrieve IPFS data for CID ${cid}:`, error);
         return null;
@@ -47,16 +60,20 @@ async function retrieveVoteFromIPFS(cid) {
 }
 
 // Function to unpin vote data from Pinata
-async function unpinFromIPFS(cid) {
+async function unpinFromIPFS() {
     try {
-        await fetch(`https://api.pinata.cloud/pinning/unpin/${cid}`, {
+        // Fetch YOUR LOCAL BACKEND, which handles the unpinning
+        const res = await fetch(`${BACKEND_URL}/unpin`, {
             method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${config.PINATA_JWT}`,
-            },
         });
+
+        if (!res.ok) {
+            const errorBody = await res.json();
+            throw new Error(errorBody.details || errorBody.message || "Pinata proxy failed.");
+        }
     } catch (error) {
-        console.error(`Failed to unpin IPFS data for CID ${cid}:`, error);
-        return null;
+        console.error(`Pinata proxy unpin failed for ${cid}:`, error);
+        // Allow unpin failure to be non-critical, but log it.
+        return null; 
     }
 }

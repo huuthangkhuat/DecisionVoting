@@ -71,12 +71,7 @@ async function handleEndVoting() {
 
 async function handleStartNewSession() {
     try {
-        const voterCIDs = await getCIDsFromPastEvents();
-        alert(`Cleaning up ${voterCIDs.length} pinned votes from previous session.`);
-        for (const { cid } of voterCIDs) {
-            await unpinFromIPFS(cid);
-        }
-        alert("Previous votes unpinned. Proceeding to start new session setup.");
+        await unpinFromIPFS();
         await votingContract.methods.startSetup().call({ from: userAccount });
         const receipt = await votingContract.methods.startSetup().send({ from: userAccount });
         logEventsFromReceipt(receipt);
@@ -200,8 +195,7 @@ async function handleTallySubmission() {
     for (const { cid } of voterCIDs) {
         // Fetch the JSON vote document from IPFS via the Pinata gateway
         try {
-            const voteDocument = await retrieveVoteFromIPFS(cid);
-            const index = voteDocument.optionIndex;
+            const index = await retrieveVoteFromIPFS(cid);
             finalCounts[index] += 1;
         } catch (error) {
             console.error(`Failed to retrieve or process vote document for CID ${cid}:`, error);
